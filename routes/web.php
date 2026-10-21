@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin\NoticeController as AdminNoticeController;
 use App\Http\Controllers\BlockController;
+use App\Http\Controllers\ClubController;
+use App\Http\Controllers\ClubMembershipController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\HouseTutorController;
 use App\Http\Controllers\NoticeController;
@@ -10,6 +12,7 @@ use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\SeatAllocationController;
 use App\Http\Controllers\StudentController;
+use App\Models\Club;
 use App\Models\Complaint;
 use App\Models\HouseTutor;
 use App\Models\Notice;
@@ -23,6 +26,11 @@ Route::redirect('/', '/notices');
 Route::get('/notices', [NoticeController::class, 'index'])->name('notices.index');
 Route::get('/notices/{notice}', [NoticeController::class, 'show'])->name('notices.show');
 Route::get('/notices/{notice}/attachment', [NoticeController::class, 'attachment'])->name('notices.attachment');
+
+// Public club directory.
+Route::get('/clubs', [ClubController::class, 'index'])->name('clubs.index');
+Route::get('/clubs/{club}', [ClubController::class, 'show'])->whereNumber('club')->name('clubs.show');
+Route::get('/clubs/{club}/logo', [ClubController::class, 'logo'])->whereNumber('club')->name('clubs.logo');
 
 Route::middleware(['auth', 'active'])->group(function () {
     Route::view('/dashboard', 'dashboard')->name('dashboard');
@@ -72,6 +80,17 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::put('/notices/{notice}', [AdminNoticeController::class, 'update'])->can('update', 'notice')->name('notices.update');
         Route::delete('/notices/{notice}', [AdminNoticeController::class, 'destroy'])->can('delete', 'notice')->name('notices.destroy');
     });
+
+    Route::get('/clubs/create', [ClubController::class, 'create'])->can('create', Club::class)->name('clubs.create');
+    Route::post('/clubs', [ClubController::class, 'store'])->can('create', Club::class)->name('clubs.store');
+    Route::get('/clubs/{club}/edit', [ClubController::class, 'edit'])->can('update', 'club')->name('clubs.edit');
+    Route::put('/clubs/{club}', [ClubController::class, 'update'])->can('update', 'club')->name('clubs.update');
+    Route::put('/clubs/{club}/admins', [ClubController::class, 'updateAdmins'])->can('assignAdmins', 'club')->name('clubs.admins');
+    Route::get('/clubs/{club}/manage', [ClubController::class, 'manage'])->can('manageMembers', 'club')->name('clubs.manage');
+    Route::post('/clubs/{club}/join', [ClubMembershipController::class, 'store'])->can('join', 'club')->name('clubs.join');
+    Route::post('/club-memberships/{membership}/approve', [ClubMembershipController::class, 'approve'])->can('decide', 'membership')->name('memberships.approve');
+    Route::post('/club-memberships/{membership}/reject', [ClubMembershipController::class, 'reject'])->can('decide', 'membership')->name('memberships.reject');
+    Route::post('/club-memberships/{membership}/remove', [ClubMembershipController::class, 'remove'])->can('decide', 'membership')->name('memberships.remove');
 
     Route::controller(ComplaintController::class)->prefix('complaints')->name('complaints.')->group(function () {
         Route::get('/', 'index')->name('index');

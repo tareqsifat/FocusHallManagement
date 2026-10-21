@@ -103,6 +103,17 @@ class User extends Authenticatable
                 ->orWhereHas('houseTutor', fn ($t) => $t->where('is_active', true)));
     }
 
+    public function removeRole(RoleName $role): void
+    {
+        $this->roles()->detach(Role::where('name', $role)->value('id'));
+        $this->unsetRelation('roles');
+    }
+
+    public function administeredClubs(): BelongsToMany
+    {
+        return $this->belongsToMany(Club::class, 'club_admins');
+    }
+
     public function isActive(): bool
     {
         return $this->status === UserStatus::Active;
