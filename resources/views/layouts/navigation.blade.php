@@ -3,7 +3,12 @@
     $links = collect([
         ['Dashboard', 'dashboard', true],
         ['Registrations', 'registrations.index', $user->can('reviewRegistrations', App\Models\User::class)],
-    ])->filter(fn ($link) => $link[2] && Route::has($link[1]));
+        ['Students', 'students.index', $user->can('viewAny', App\Models\StudentProfile::class)],
+        ['Rooms', 'rooms.index', $user->can('view-hall')],
+        ['Blocks', 'blocks.index', $user->can('view-hall')],
+        ['My hall profile', 'students.show', $user->studentProfile && ! $user->can('viewAny', App\Models\StudentProfile::class), $user->studentProfile],
+    ])->filter(fn ($link) => $link[2] && Route::has($link[1]))
+        ->map(fn ($link) => $link + [3 => []]);
 @endphp
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
     <!-- Primary Navigation Menu -->
@@ -19,8 +24,8 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-6 sm:-my-px sm:ms-8 md:flex">
-                    @foreach ($links as [$label, $route])
-                        <x-nav-link :href="route($route)" :active="request()->routeIs(Str::beforeLast($route, '.').'*')">{{ $label }}</x-nav-link>
+                    @foreach ($links as [$label, $route, , $param])
+                        <x-nav-link :href="route($route, $param)" :active="request()->routeIs(Str::beforeLast($route, '.').'*')">{{ $label }}</x-nav-link>
                     @endforeach
                 </div>
             </div>
@@ -74,8 +79,8 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden md:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            @foreach ($links as [$label, $route])
-                <x-responsive-nav-link :href="route($route)" :active="request()->routeIs(Str::beforeLast($route, '.').'*')">{{ $label }}</x-responsive-nav-link>
+            @foreach ($links as [$label, $route, , $param])
+                <x-responsive-nav-link :href="route($route, $param)" :active="request()->routeIs(Str::beforeLast($route, '.').'*')">{{ $label }}</x-responsive-nav-link>
             @endforeach
         </div>
 
