@@ -49,6 +49,11 @@ class StudentProfile extends Model
         return $this->hasMany(SeatAllocation::class);
     }
 
+    public function clubMemberships(): HasMany
+    {
+        return $this->hasMany(ClubMembership::class);
+    }
+
     public function currentAllocation(): HasOne
     {
         return $this->hasOne(SeatAllocation::class)->whereNull('vacated_at');

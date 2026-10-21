@@ -51,13 +51,21 @@
   - Logos (JPG/PNG ≤ 1 MB) stored under generated names on the private disk and served by a route, so no `storage:link` step is needed.
   - Tests: BR-12 (service and DB index), re-request after rejection, own-club scoping (403), BR-03, admin assignment and role sync, logo upload.
 
+- **M7 Dashboard**
+  - `DashboardService` computes: total (active) seats, occupied seats, occupancy %, pending student registrations; open complaints by category (every category listed, zeros included), open total, overdue count, average resolution time in days for complaints resolved in the last 30 days (BR-10).
+  - Office Staff, Provost, Super Admin see everything for the whole hall. House tutors see the complaint figures for complaints raised from rooms in their blocks. Students and club admins get a personal home page (seat, open complaints, clubs) instead, since the matrix gives them no dashboard.
+  - UI: stat tiles plus a single-colour bar list with printed counts (a real table underneath for screen readers).
+  - Tests: every figure checked against known data, tutor scoping, 30-day window, role views.
+
 ## Partly done
 - (none)
 
 ## Not done
-- M7 Dashboard, seeders, README.
+- Seeders, README.
 
 ## Assumptions
+- Dashboard "open" complaints are Submitted, Under Review and In Progress. Closed complaints still count toward average resolution time (they keep `resolved_at`).
+- A tutor's dashboard covers complaints whose room is in one of their blocks; complaints from attached students (no room) are counted only on the hall-wide dashboard.
 - **(Keep in final README)** Only the Super Admin creates clubs and assigns their admins, as the brief's matrix says; the Provost has no club permissions. Admins are optional at creation so a club can be set up before its president is chosen; until then the Super Admin can handle membership requests.
 - **(Keep in final README)** A club's president (its club admin) must be an approved student. A club can have at most two admins (the president plus one more), configurable as `hall.club_max_admins`. A student can be admin of only one club (unique `club_admins.user_id`, plus a validation message).
 - Club logos are public (the directory is public); they are still served through a route rather than a public symlink.

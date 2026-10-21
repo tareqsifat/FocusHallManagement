@@ -5,6 +5,7 @@ use App\Http\Controllers\BlockController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\ClubMembershipController;
 use App\Http\Controllers\ComplaintController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HouseTutorController;
 use App\Http\Controllers\NoticeController;
 use App\Http\Controllers\ProfileController;
@@ -33,7 +34,7 @@ Route::get('/clubs/{club}', [ClubController::class, 'show'])->whereNumber('club'
 Route::get('/clubs/{club}/logo', [ClubController::class, 'logo'])->whereNumber('club')->name('clubs.logo');
 
 Route::middleware(['auth', 'active'])->group(function () {
-    Route::view('/dashboard', 'dashboard')->name('dashboard');
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
