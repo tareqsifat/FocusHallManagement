@@ -6,6 +6,7 @@ use App\Enums\NoticeStatus;
 use App\Models\Notice;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -16,7 +17,7 @@ class NoticeService
 {
     public function save(Notice $notice, array $data, ?UploadedFile $attachment, User $by): Notice
     {
-        $notice->fill($data);
+        $notice->fill(Arr::only($data, ['title', 'body', 'category', 'status']));
         $notice->is_pinned = (bool) ($data['is_pinned'] ?? false);
         $notice->created_by ??= $by->id;
 

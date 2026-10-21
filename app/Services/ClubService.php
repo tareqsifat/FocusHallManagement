@@ -6,6 +6,7 @@ use App\Enums\RoleName;
 use App\Models\Club;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -24,7 +25,7 @@ class ClubService
 
     public function save(Club $club, array $data, ?UploadedFile $logo): Club
     {
-        $club->fill($data);
+        $club->fill(Arr::only($data, ['name', 'description']));
 
         $old = $club->logo_path;
         if ($logo) {

@@ -57,11 +57,21 @@
   - UI: stat tiles plus a single-colour bar list with printed counts (a real table underneath for screen readers).
   - Tests: every figure checked against known data, tutor scoping, 30-day window, role views.
 
+- **Seeders (Section 10)** — `php artisan migrate --seed` (about 3 s)
+  - 3 blocks (North, South, Extension), 32 rooms with capacity 2–4 (107 seats).
+  - 61 students: 40 residents spread across all blocks, 15 attached (3 former residents with allocation history), 5 pending, 1 rejected. A few names in Bangla script.
+  - 5 house tutors covering all 3 blocks (demo tutor: North only); 4 clubs with presidents, active members and pending requests (Cultural has two admins).
+  - 24 complaints in every status, 6 overdue, one reopened by its student, with assignments, notes and comments. Tracking IDs follow submission order.
+  - 12 notices: 10 published (2 pinned, 2 with a small generated PDF), 2 drafts, one in Bangla.
+  - Everything is created through the real services with the clock moved back (`Carbon::setTestNow`), so history, status logs, overdue flags and dashboard figures agree with each other.
+  - `SeederTest` checks every Section 10 count, that all six demo accounts log in and hold their roles, and that dashboard figures match.
+  - Fixed along the way: services now pass explicit fields to `create`/`fill` instead of relying on `$fillable` to drop extra keys (seeders run unguarded and exposed it).
+
 ## Partly done
 - (none)
 
 ## Not done
-- Seeders, README.
+- README.
 
 ## Assumptions
 - Dashboard "open" complaints are Submitted, Under Review and In Progress. Closed complaints still count toward average resolution time (they keep `resolved_at`).

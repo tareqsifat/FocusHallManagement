@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Room;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -16,7 +17,7 @@ class RoomService
     public function create(array $data): Room
     {
         return DB::transaction(function () use ($data) {
-            $room = new Room($data);
+            $room = new Room(Arr::only($data, ['block_id', 'room_no', 'floor']));
             $room->capacity = $data['capacity'];
             $room->save();
 
@@ -61,7 +62,7 @@ class RoomService
                 }
             }
 
-            $room->fill($data);
+            $room->fill(Arr::only($data, ['block_id', 'room_no', 'floor']));
             $room->capacity = $capacity;
             $room->save();
 

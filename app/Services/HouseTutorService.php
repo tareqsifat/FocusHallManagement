@@ -6,11 +6,14 @@ use App\Enums\RoleName;
 use App\Enums\UserStatus;
 use App\Models\HouseTutor;
 use App\Models\User;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 /** A house tutor is a user account, a tutor profile and block assignments, written together. */
 class HouseTutorService
 {
+    private const PROFILE_FIELDS = ['designation', 'department', 'phone'];
+
     public function create(array $data): HouseTutor
     {
         return DB::transaction(function () use ($data) {
@@ -20,7 +23,7 @@ class HouseTutorService
             $user->save();
             $user->assignRole(RoleName::HouseTutor);
 
-            $tutor = $user->houseTutor()->create($data);
+            $tutor = $user->houseTutor()->create(Arr::only($data, self::PROFILE_FIELDS));
             $tutor->blocks()->sync($data['block_ids']);
 
             return $tutor;
@@ -36,7 +39,7 @@ class HouseTutorService
             }
             $tutor->user->save();
 
-            $tutor->update($data);
+            $tutor->update(Arr::only($data, self::PROFILE_FIELDS));
             $tutor->blocks()->sync($data['block_ids']);
 
             return $tutor;
