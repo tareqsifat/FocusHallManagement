@@ -3,6 +3,7 @@
 use App\Enums\ComplaintStatus;
 use App\Enums\RoleName;
 use App\Models\Complaint;
+use App\Models\HouseTutor;
 use App\Models\Room;
 use App\Models\User;
 use App\Services\SeatAllocationService;
@@ -135,7 +136,7 @@ test('both the student and staff can comment, shown in time order', function () 
 });
 
 test('office staff assign a complaint to a house tutor', function () {
-    $tutor = User::factory()->withRole(RoleName::HouseTutor)->create();
+    $tutor = HouseTutor::factory()->create()->user;
     $complaint = Complaint::factory()->create();
 
     $this->actingAs($this->office)->post(route('complaints.assign', $complaint), ['assignee_id' => $tutor->id])

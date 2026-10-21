@@ -8,13 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Active/inactive lives on users.status, which already gates login and assignment.
+        // is_active is kept in step with users.status by HouseTutorService::setActive
+        // (users.status is what actually blocks login).
         Schema::create('house_tutors', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->unique()->constrained()->restrictOnDelete();
             $table->string('designation');
             $table->string('department');
             $table->string('phone', 11);
+            $table->boolean('is_active')->default(true)->index();
             $table->timestamps();
         });
 

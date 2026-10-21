@@ -43,10 +43,18 @@ class HouseTutorService
         });
     }
 
-    /** Deactivated tutors cannot log in or be assigned complaints; their history stays. */
+    /**
+     * Deactivated tutors cannot log in, be assigned complaints or see block students; their history stays.
+     * The tutor flag and the account status change together so they never disagree.
+     */
     public function setActive(HouseTutor $tutor, bool $active): void
     {
-        $tutor->user->status = $active ? UserStatus::Active : UserStatus::Inactive;
-        $tutor->user->save();
+        DB::transaction(function () use ($tutor, $active) {
+            $tutor->is_active = $active;
+            $tutor->save();
+
+            $tutor->user->status = $active ? UserStatus::Active : UserStatus::Inactive;
+            $tutor->user->save();
+        });
     }
 }

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\UserStatus;
 use App\Http\Requests\HouseTutorRequest;
 use App\Models\Block;
 use App\Models\HouseTutor;
@@ -52,7 +51,7 @@ class HouseTutorController extends Controller
 
     public function toggle(HouseTutor $houseTutor, HouseTutorService $service): RedirectResponse
     {
-        $activate = $houseTutor->user->status !== UserStatus::Active;
+        $activate = ! $houseTutor->is_active;
         $service->setActive($houseTutor, $activate);
 
         return back()->with('status', "{$houseTutor->user->name} ".($activate ? 'reactivated.' : 'deactivated.'));

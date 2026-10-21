@@ -77,7 +77,7 @@ class User extends Authenticatable
      */
     public function tutorBlockIds(): array
     {
-        return $this->tutorBlockIds ??= $this->hasRole(RoleName::HouseTutor) && $this->houseTutor
+        return $this->tutorBlockIds ??= $this->hasRole(RoleName::HouseTutor) && $this->houseTutor?->is_active
             ? $this->houseTutor->blocks()->pluck('blocks.id')->all()
             : [];
     }
@@ -94,11 +94,13 @@ class User extends Authenticatable
         $this->unsetRelation('roles');
     }
 
-    /** Active house tutors and office staff: the people a complaint can be assigned to. */
+    /** Active office staff and active house tutors: the people a complaint can be assigned to. */
     public function scopeAssignable(Builder $query): void
     {
         $query->where('status', UserStatus::Active)
-            ->whereHas('roles', fn ($q) => $q->whereIn('name', [RoleName::HouseTutor, RoleName::OfficeStaff]));
+            ->where(fn ($q) => $q
+                ->whereHas('roles', fn ($r) => $r->where('name', RoleName::OfficeStaff))
+                ->orWhereHas('houseTutor', fn ($t) => $t->where('is_active', true)));
     }
 
     public function isActive(): bool

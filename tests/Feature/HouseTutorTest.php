@@ -81,7 +81,8 @@ test('a deactivated tutor cannot log in or be assigned complaints', function () 
     $tutor = HouseTutor::factory()->create();
 
     $this->actingAs($this->provost)->post(route('house-tutors.toggle', $tutor));
-    expect($tutor->user->fresh()->status)->toBe(UserStatus::Inactive);
+    expect($tutor->fresh()->is_active)->toBeFalse()
+        ->and($tutor->user->fresh()->status)->toBe(UserStatus::Inactive);
 
     $this->actingAs($this->office)->post(route('complaints.assign', Complaint::factory()->create()), ['assignee_id' => $tutor->user_id])
         ->assertSessionHasErrors('assignee_id');
@@ -136,4 +137,13 @@ test('tutor management pages render', function () {
     $this->actingAs($this->provost)->get(route('house-tutors.index'))->assertOk()->assertSee($tutor->user->name)->assertSee('North');
     $this->actingAs($this->provost)->get(route('house-tutors.create'))->assertOk();
     $this->actingAs($this->provost)->get(route('house-tutors.edit', $tutor))->assertOk()->assertSee($tutor->designation);
+});
+
+test('reactivating restores both the tutor flag and the login', function () {
+    $tutor = HouseTutor::factory()->create();
+    $this->actingAs($this->provost)->post(route('house-tutors.toggle', $tutor));
+    $this->actingAs($this->provost)->post(route('house-tutors.toggle', $tutor));
+
+    expect($tutor->fresh()->is_active)->toBeTrue()
+        ->and($tutor->user->fresh()->status)->toBe(UserStatus::Active);
 });

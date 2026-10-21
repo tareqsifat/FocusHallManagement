@@ -9,7 +9,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
         <div class="bg-white shadow-sm sm:rounded-lg divide-y divide-gray-100">
             @forelse ($tutors as $tutor)
-                @php $active = $tutor->user->isActive(); @endphp
+                @php $active = $tutor->is_active; @endphp
                 <div class="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div class="min-w-0">
                         <p class="font-medium text-gray-900">
