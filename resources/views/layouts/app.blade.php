@@ -28,7 +28,18 @@
             @endisset
 
             <!-- Page Content -->
-            <main>
+            <main class="py-6 sm:py-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    @if (session('status'))
+                        <div role="status" class="mb-4 rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">{{ session('status') }}</div>
+                    @endif
+                    @if ($errors->any())
+                        <div role="alert" class="mb-4 rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+                            {{ $errors->count() === 1 ? $errors->first() : 'Please fix the highlighted fields.' }}
+                        </div>
+                    @endif
+                </div>
+
                 {{ $slot }}
             </main>
         </div>

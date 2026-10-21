@@ -51,6 +51,13 @@ class LoginRequest extends FormRequest
         }
 
         RateLimiter::clear($this->throttleKey());
+
+        $user = Auth::user();
+        if (! $user->isActive()) {
+            Auth::logout();
+
+            throw ValidationException::withMessages(['email' => $user->status->loginMessage($user->rejection_reason)]);
+        }
     }
 
     /**
