@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\BlockController;
 use App\Http\Controllers\ComplaintController;
+use App\Http\Controllers\HouseTutorController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\SeatAllocationController;
 use App\Http\Controllers\StudentController;
 use App\Models\Complaint;
+use App\Models\HouseTutor;
 use App\Models\StudentProfile;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -48,6 +50,13 @@ Route::middleware(['auth', 'active'])->group(function () {
         ->can('allocateSeat', 'student')->name('allocations.store');
     Route::post('/allocations/{allocation}/vacate', [SeatAllocationController::class, 'vacate'])
         ->can('vacate', 'allocation')->name('allocations.vacate');
+
+    Route::get('/house-tutors', [HouseTutorController::class, 'index'])->can('viewAny', HouseTutor::class)->name('house-tutors.index');
+    Route::get('/house-tutors/create', [HouseTutorController::class, 'create'])->can('create', HouseTutor::class)->name('house-tutors.create');
+    Route::post('/house-tutors', [HouseTutorController::class, 'store'])->can('create', HouseTutor::class)->name('house-tutors.store');
+    Route::get('/house-tutors/{house_tutor}/edit', [HouseTutorController::class, 'edit'])->can('update', 'house_tutor')->name('house-tutors.edit');
+    Route::put('/house-tutors/{house_tutor}', [HouseTutorController::class, 'update'])->can('update', 'house_tutor')->name('house-tutors.update');
+    Route::post('/house-tutors/{house_tutor}/toggle', [HouseTutorController::class, 'toggle'])->can('update', 'house_tutor')->name('house-tutors.toggle');
 
     Route::controller(ComplaintController::class)->prefix('complaints')->name('complaints.')->group(function () {
         Route::get('/', 'index')->name('index');

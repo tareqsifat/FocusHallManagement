@@ -17,6 +17,7 @@ class StudentController extends Controller
         $search = trim((string) $request->query('search'));
 
         $students = StudentProfile::query()
+            ->visibleTo($request->user())
             ->whereHas('user', fn ($q) => $q->where('status', UserStatus::Active))
             ->with(['user', 'currentAllocation.seat.room.block'])
             ->when($search !== '', fn ($q) => $q->where(fn ($q) => $q
@@ -33,7 +34,9 @@ class StudentController extends Controller
 
         return view('students.index', [
             'students' => $students,
-            'blocks' => Block::orderBy('name')->get(),
+            'blocks' => Block::query()
+                ->when(! $request->user()->isHallAdmin(), fn ($q) => $q->whereIn('id', $request->user()->tutorBlockIds()))
+                ->orderBy('name')->get(),
             'sessions' => StudentProfile::distinct()->orderByDesc('session')->pluck('session'),
         ]);
     }

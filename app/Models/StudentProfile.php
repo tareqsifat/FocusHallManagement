@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ResidencyStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,6 +22,21 @@ class StudentProfile extends Model
     protected function casts(): array
     {
         return ['residency_status' => ResidencyStatus::class];
+    }
+
+    /**
+     * Hall admins see every student; a house tutor sees residents of their blocks (BR-08);
+     * anyone else sees only their own profile.
+     */
+    public function scopeVisibleTo(Builder $query, User $user): void
+    {
+        if ($user->isHallAdmin()) {
+            return;
+        }
+
+        $query->where(fn ($q) => $q
+            ->where('user_id', $user->id)
+            ->orWhereHas('currentAllocation.seat.room', fn ($r) => $r->whereIn('block_id', $user->tutorBlockIds())));
     }
 
     public function user(): BelongsTo

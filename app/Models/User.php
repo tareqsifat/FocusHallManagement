@@ -40,6 +40,9 @@ class User extends Authenticatable
         'status' => 'pending',
     ];
 
+    /** @var list<int>|null */
+    private ?array $tutorBlockIds = null;
+
     /**
      * @return array<string, string>
      */
@@ -60,6 +63,23 @@ class User extends Authenticatable
     public function studentProfile(): HasOne
     {
         return $this->hasOne(StudentProfile::class);
+    }
+
+    public function houseTutor(): HasOne
+    {
+        return $this->hasOne(HouseTutor::class);
+    }
+
+    /**
+     * Blocks this user supervises as a house tutor (empty for everyone else). Memoised per request.
+     *
+     * @return list<int>
+     */
+    public function tutorBlockIds(): array
+    {
+        return $this->tutorBlockIds ??= $this->hasRole(RoleName::HouseTutor) && $this->houseTutor
+            ? $this->houseTutor->blocks()->pluck('blocks.id')->all()
+            : [];
     }
 
     public function hasRole(RoleName ...$roles): bool

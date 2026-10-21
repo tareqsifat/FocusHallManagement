@@ -28,13 +28,22 @@
   - Photos are stored on the private `local` disk under a random name and streamed through `/complaints/{tracking_id}/photo`, which checks the view policy.
   - Tests: BR-06 valid and invalid transitions (datasets), BR-07, reopen window, BR-08 (tutor cannot open, update or comment on unassigned complaints), BR-09 year rollover, BR-13 upload validation and private serving, visibility scoping, overdue flag.
 
+- **M3 House tutors**
+  - `house_tutors` (designation, department, phone) linked one-to-one to a user with the `house_tutor` role; `block_house_tutor` pivot (a tutor covers many blocks, a block can have many tutors).
+  - Provost and Super Admin create, edit (blank password keeps the current one), deactivate and reactivate tutors. `HouseTutorService` writes user, profile, role and blocks in one transaction. Office Staff and everyone else get 403.
+  - `StudentProfile::scopeVisibleTo` is the single rule for who sees which student (hall admins all, tutors residents of their blocks, students themselves); the list uses the scope and `StudentProfilePolicy::view` reuses it, so list and profile page cannot disagree (BR-08).
+  - Tutors see complaints assigned to them (from M4) and the students of their blocks.
+  - Tests: create/edit/deactivate, 403 for office staff, BR-08 student scoping including a tutor with no blocks.
+
 ## Partly done
 - (none)
 
 ## Not done
-- M3 House tutors, M5 Notices, M6 Clubs, M7 Dashboard, seeders, README.
+- M5 Notices, M6 Clubs, M7 Dashboard, seeders, README.
 
 ## Assumptions
+- A deactivated tutor is a user with status `inactive` (cannot log in, cannot be assigned). There is no separate `house_tutors.is_active` column, so the two can never disagree. Existing assignments and history stay.
+- "Students in a tutor's blocks" means students whose current seat is in one of those blocks; attached students and former residents are not in any block.
 - Complaint transitions by role: hall admins may make any valid move except reopening; an assigned House Tutor may move to Under Review, In Progress and Resolved but not Close or Reject (the brief gives close/reject to the Provost and Office Staff); only the student who filed it may reopen (Resolved → In Progress) and only within 7 days of resolution.
 - Reopening clears `resolved_at`; resolution time is measured from submission to the latest resolution.
 - Tracking numbers may skip a value if a submission fails after its number was issued. They are never duplicated.

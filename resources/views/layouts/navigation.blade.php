@@ -7,6 +7,7 @@
         ['Students', 'students.index', $user->can('viewAny', App\Models\StudentProfile::class)],
         ['Rooms', 'rooms.index', $user->can('view-hall')],
         ['Blocks', 'blocks.index', $user->can('view-hall')],
+        ['House tutors', 'house-tutors.index', $user->can('viewAny', App\Models\HouseTutor::class)],
         ['My hall profile', 'students.show', $user->studentProfile && ! $user->can('viewAny', App\Models\StudentProfile::class), $user->studentProfile],
     ])->filter(fn ($link) => $link[2] && Route::has($link[1]))
         ->map(fn ($link) => $link + [3 => []]);
