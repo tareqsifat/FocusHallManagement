@@ -123,13 +123,23 @@ test('super admin assigns club admins and the role follows', function () {
         ->and($this->club->admins()->pluck('users.id')->all())->toBe([$newAdmin->id]);
 });
 
-test('a club admin keeps the role while leading another club', function () {
+test('a student cannot be admin of two clubs', function () {
     $second = Club::factory()->create();
-    app(ClubService::class)->syncAdmins($second, [$this->clubAdmin->id]);
 
-    $this->actingAs($this->superAdmin)->put(route('clubs.admins', $this->club), ['admin_ids' => []]);
+    $this->actingAs($this->superAdmin)->put(route('clubs.admins', $second), ['admin_ids' => [$this->clubAdmin->id]])
+        ->assertSessionHasErrors(['admin_ids.0' => 'This student is already an admin of another club.']);
+    expect($second->admins()->count())->toBe(0);
 
-    expect($this->clubAdmin->fresh()->hasRole(RoleName::ClubAdmin))->toBeTrue();
+    // Re-saving the same club with its current admin is fine.
+    $this->actingAs($this->superAdmin)->put(route('clubs.admins', $this->club), ['admin_ids' => [$this->clubAdmin->id]])
+        ->assertSessionHasNoErrors();
+});
+
+test('the database refuses a second club for the same admin', function () {
+    $second = Club::factory()->create();
+
+    expect(fn () => DB::table('club_admins')->insert(['club_id' => $second->id, 'user_id' => $this->clubAdmin->id]))
+        ->toThrow(UniqueConstraintViolationException::class);
 });
 
 test('only approved students can be club admins; only super admin assigns', function () {

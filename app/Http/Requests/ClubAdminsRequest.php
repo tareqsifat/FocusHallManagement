@@ -19,7 +19,11 @@ class ClubAdminsRequest extends FormRequest
 
         return [
             'admin_ids' => ['array', 'max:'.config('hall.club_max_admins')],
-            'admin_ids.*' => ['integer', 'distinct', Rule::in($eligible)],
+            'admin_ids.*' => [
+                'integer', 'distinct', Rule::in($eligible),
+                // A student can lead only one club.
+                Rule::unique('club_admins', 'user_id')->whereNot('club_id', $this->route('club')->id),
+            ],
         ];
     }
 
@@ -28,6 +32,7 @@ class ClubAdminsRequest extends FormRequest
         return [
             'admin_ids.*.in' => 'Club admins must be approved students.',
             'admin_ids.max' => 'A club can have at most :max admins.',
+            'admin_ids.*.unique' => 'This student is already an admin of another club.',
         ];
     }
 }

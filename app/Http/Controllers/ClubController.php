@@ -69,6 +69,7 @@ class ClubController extends Controller
         $students = $request->user()->can('assignAdmins', $club)
             ? User::where('status', UserStatus::Active)
                 ->whereHas('roles', fn ($q) => $q->where('name', RoleName::Student))
+                ->whereDoesntHave('administeredClubs', fn ($q) => $q->whereKeyNot($club->id))
                 ->with('studentProfile')
                 ->orderBy('name')
                 ->get()

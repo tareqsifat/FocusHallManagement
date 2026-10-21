@@ -47,7 +47,7 @@
   - Public directory and club page: logo, admins, active member count. Approved students request to join (BR-03); the page shows their current request state.
   - BR-12: one pending or active request per student per club, checked in `ClubMembershipService` and backed by a unique index on a stored generated column that is only set while the request is open. Rejected or removed students may ask again.
   - Club admins (and Super Admin) edit their own club page and approve, reject or remove members of their own club only; other clubs return 403. Decisions apply only to the right state (approve/reject pending, remove active), under a row lock.
-  - Super Admin creates clubs and assigns admins (approved students only, at most two per club). The `club_admin` role follows the pivot: gained with the first club, dropped when the user leads none.
+  - Super Admin creates clubs and assigns admins (approved students only, at most two per club). The `club_admin` role follows the pivot: gained when assigned, dropped when removed. A student can lead only one club.
   - Logos (JPG/PNG ≤ 1 MB) stored under generated names on the private disk and served by a route, so no `storage:link` step is needed.
   - Tests: BR-12 (service and DB index), re-request after rejection, own-club scoping (403), BR-03, admin assignment and role sync, logo upload.
 
@@ -58,7 +58,7 @@
 - M7 Dashboard, seeders, README.
 
 ## Assumptions
-- **(Keep in final README)** A club's president (its club admin) must be an approved student. A club can have at most two admins (the president plus one more), configurable as `hall.club_max_admins`. A student may lead more than one club.
+- **(Keep in final README)** A club's president (its club admin) must be an approved student. A club can have at most two admins (the president plus one more), configurable as `hall.club_max_admins`. A student can be admin of only one club (unique `club_admins.user_id`, plus a validation message).
 - Club logos are public (the directory is public); they are still served through a route rather than a public symlink.
 - Notice bodies are plain text (line breaks kept, HTML escaped) to rule out stored XSS.
 - A club admin may edit or delete only Club notices they created. Linking a notice to a specific club waits for M6.

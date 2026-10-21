@@ -109,6 +109,7 @@ class User extends Authenticatable
         $this->unsetRelation('roles');
     }
 
+    /** At most one club (unique club_admins.user_id); kept as a relation for querying. */
     public function administeredClubs(): BelongsToMany
     {
         return $this->belongsToMany(Club::class, 'club_admins');

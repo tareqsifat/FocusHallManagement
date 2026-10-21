@@ -31,7 +31,7 @@ class ClubService
 
     /**
      * Super Admin assigns club admins. The club_admin role follows the pivot: users gain it
-     * with their first club and lose it when they no longer lead any club.
+     * when they become an admin and lose it when removed (a student leads at most one club).
      *
      * @param  list<int>  $userIds
      */
@@ -41,8 +41,7 @@ class ClubService
             $changes = $club->admins()->sync($userIds);
 
             User::whereKey($changes['attached'])->get()->each->assignRole(RoleName::ClubAdmin);
-            User::whereKey($changes['detached'])->whereDoesntHave('administeredClubs')->get()
-                ->each->removeRole(RoleName::ClubAdmin);
+            User::whereKey($changes['detached'])->get()->each->removeRole(RoleName::ClubAdmin);
         });
     }
 }

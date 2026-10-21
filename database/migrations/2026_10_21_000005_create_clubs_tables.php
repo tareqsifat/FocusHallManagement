@@ -16,10 +16,12 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        // Max two admins per club is enforced in ClubAdminsRequest (hall.club_max_admins).
         Schema::create('club_admins', function (Blueprint $table) {
             $table->foreignId('club_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->primary(['club_id', 'user_id']);
+            // unique: a student can be admin of only one club.
+            $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete();
+            $table->index('club_id');
         });
 
         Schema::create('club_memberships', function (Blueprint $table) {
