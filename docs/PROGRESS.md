@@ -67,11 +67,16 @@
   - `SeederTest` checks every Section 10 count, that all six demo accounts log in and hold their roles, and that dashboard figures match.
   - Fixed along the way: services now pass explicit fields to `create`/`fill` instead of relying on `$fillable` to drop extra keys (seeders run unguarded and exposed it).
 
+- **README** at the repository root (Section 11). Setup verified from a fresh clone: `composer install`, `npm install && npm run build`, `.env`, `migrate --seed`, `php artisan test` (151 passed), Pint clean.
+
 ## Partly done
-- (none)
+- Anonymous complaints (bonus): column only, no UI.
+- 375 px check: built mobile-first, but the automated browser pass could not reach the local server.
 
 ## Not done
-- README.
+- Demo screenshots or recording (Section 11, item 4).
+- README "Time spent" and a final review of "AI tools used" (to be filled by the candidate).
+- Bonus items (JSON API, Docker, CI, deployment, etc.).
 
 ## Assumptions
 - Dashboard "open" complaints are Submitted, Under Review and In Progress. Closed complaints still count toward average resolution time (they keep `resolved_at`).
@@ -80,7 +85,7 @@
 - **(Keep in final README)** A club's president (its club admin) must be an approved student. A club can have at most two admins (the president plus one more), configurable as `hall.club_max_admins`. A student can be admin of only one club (unique `club_admins.user_id`, plus a validation message).
 - Club logos are public (the directory is public); they are still served through a route rather than a public symlink.
 - Notice bodies are plain text (line breaks kept, HTML escaped) to rule out stored XSS.
-- A club admin may edit or delete only Club notices they created. Linking a notice to a specific club waits for M6.
+- A club admin may edit or delete only Club notices they created. Notices are not linked to a specific club.
 - Notices can be deleted (unlike allocations and complaints, they are not history).
 - Deactivating a tutor sets `house_tutors.is_active = false` and the account status to `inactive` in one transaction (`HouseTutorService::setActive`), so the tutor can neither log in, be assigned, nor see block students. Existing assignments and history stay.
 - "Students in a tutor's blocks" means students whose current seat is in one of those blocks; attached students and former residents are not in any block.
