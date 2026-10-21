@@ -7,6 +7,8 @@ return [
 
     'overdue_days' => 7,
 
+    'reopen_days' => 7,
+
     'departments' => [
         'Accounting', 'Applied Mathematics', 'Bangla', 'Botany', 'Chemistry',
         'Computer Science and Engineering', 'Economics', 'English', 'Finance',

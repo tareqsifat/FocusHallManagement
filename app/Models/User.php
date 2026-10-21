@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\RoleName;
 use App\Enums\UserStatus;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -71,6 +72,13 @@ class User extends Authenticatable
         $ids = Role::whereIn('name', array_map(fn (RoleName $r) => $r->value, $roles))->pluck('id');
         $this->roles()->syncWithoutDetaching($ids);
         $this->unsetRelation('roles');
+    }
+
+    /** Active house tutors and office staff: the people a complaint can be assigned to. */
+    public function scopeAssignable(Builder $query): void
+    {
+        $query->where('status', UserStatus::Active)
+            ->whereHas('roles', fn ($q) => $q->whereIn('name', [RoleName::HouseTutor, RoleName::OfficeStaff]));
     }
 
     public function isActive(): bool

@@ -2,6 +2,7 @@
     $user = Auth::user();
     $links = collect([
         ['Dashboard', 'dashboard', true],
+        ['Complaints', 'complaints.index', true],
         ['Registrations', 'registrations.index', $user->can('reviewRegistrations', App\Models\User::class)],
         ['Students', 'students.index', $user->can('viewAny', App\Models\StudentProfile::class)],
         ['Rooms', 'rooms.index', $user->can('view-hall')],
