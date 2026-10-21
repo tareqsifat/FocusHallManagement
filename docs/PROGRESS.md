@@ -35,13 +35,23 @@
   - Tutors see complaints assigned to them (from M4) and the students of their blocks.
   - Tests: create/edit/deactivate, 403 for office staff, BR-08 student scoping including a tutor with no blocks.
 
+- **M5 Notice board**
+  - `notices` with `NoticeCategory` (Provost Office, Hall Office, Club) and `NoticeStatus` (Draft, Published) enums, pinned flag, `published_at` set on first publication.
+  - Public board at `/notices` (also `/`), no login: `Notice::published()` only, pinned first then newest, title search, category filter, pagination. Detail page and PDF download return 404 for drafts (BR-11), so drafts are not revealed.
+  - Management at `/admin/notices` (drafts included): Office Staff, Provost, Super Admin any category; Club Admins only the Club category and only notices they wrote. Students and tutors get 403.
+  - PDF attachments (≤ 5 MB, extension and sniffed type checked) stored on the private disk under generated names and downloaded as `notice-{id}.pdf` (BR-13). Replacing or deleting a notice removes the old file.
+  - Tests: BR-11 (list, search, detail, attachment), ordering, filters, upload validation, club admin restrictions, 403s.
+
 ## Partly done
 - (none)
 
 ## Not done
-- M5 Notices, M6 Clubs, M7 Dashboard, seeders, README.
+- M6 Clubs, M7 Dashboard, seeders, README.
 
 ## Assumptions
+- Notice bodies are plain text (line breaks kept, HTML escaped) to rule out stored XSS.
+- A club admin may edit or delete only Club notices they created. Linking a notice to a specific club waits for M6.
+- Notices can be deleted (unlike allocations and complaints, they are not history).
 - Deactivating a tutor sets `house_tutors.is_active = false` and the account status to `inactive` in one transaction (`HouseTutorService::setActive`), so the tutor can neither log in, be assigned, nor see block students. Existing assignments and history stay.
 - "Students in a tutor's blocks" means students whose current seat is in one of those blocks; attached students and former residents are not in any block.
 - Complaint transitions by role: hall admins may make any valid move except reopening; an assigned House Tutor may move to Under Review, In Progress and Resolved but not Close or Reject (the brief gives close/reject to the Provost and Office Staff); only the student who filed it may reopen (Resolved → In Progress) and only within 7 days of resolution.

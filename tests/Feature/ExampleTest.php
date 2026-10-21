@@ -1,7 +1,6 @@
 <?php
 
-it('returns a successful response', function () {
-    $response = $this->get('/');
-
-    $response->assertStatus(200);
+it('sends visitors from the home page to the public notice board', function () {
+    $this->get('/')->assertRedirect('/notices');
+    $this->get('/notices')->assertOk();
 });

@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Admin\NoticeController as AdminNoticeController;
 use App\Http\Controllers\BlockController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\HouseTutorController;
+use App\Http\Controllers\NoticeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\RoomController;
@@ -10,13 +12,17 @@ use App\Http\Controllers\SeatAllocationController;
 use App\Http\Controllers\StudentController;
 use App\Models\Complaint;
 use App\Models\HouseTutor;
+use App\Models\Notice;
 use App\Models\StudentProfile;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::redirect('/', '/notices');
+
+// Public notice board (BR-11: published only).
+Route::get('/notices', [NoticeController::class, 'index'])->name('notices.index');
+Route::get('/notices/{notice}', [NoticeController::class, 'show'])->name('notices.show');
+Route::get('/notices/{notice}/attachment', [NoticeController::class, 'attachment'])->name('notices.attachment');
 
 Route::middleware(['auth', 'active'])->group(function () {
     Route::view('/dashboard', 'dashboard')->name('dashboard');
@@ -57,6 +63,15 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/house-tutors/{house_tutor}/edit', [HouseTutorController::class, 'edit'])->can('update', 'house_tutor')->name('house-tutors.edit');
     Route::put('/house-tutors/{house_tutor}', [HouseTutorController::class, 'update'])->can('update', 'house_tutor')->name('house-tutors.update');
     Route::post('/house-tutors/{house_tutor}/toggle', [HouseTutorController::class, 'toggle'])->can('update', 'house_tutor')->name('house-tutors.toggle');
+
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/notices', [AdminNoticeController::class, 'index'])->can('viewAny', Notice::class)->name('notices.index');
+        Route::get('/notices/create', [AdminNoticeController::class, 'create'])->can('create', Notice::class)->name('notices.create');
+        Route::post('/notices', [AdminNoticeController::class, 'store'])->can('create', Notice::class)->name('notices.store');
+        Route::get('/notices/{notice}/edit', [AdminNoticeController::class, 'edit'])->can('update', 'notice')->name('notices.edit');
+        Route::put('/notices/{notice}', [AdminNoticeController::class, 'update'])->can('update', 'notice')->name('notices.update');
+        Route::delete('/notices/{notice}', [AdminNoticeController::class, 'destroy'])->can('delete', 'notice')->name('notices.destroy');
+    });
 
     Route::controller(ComplaintController::class)->prefix('complaints')->name('complaints.')->group(function () {
         Route::get('/', 'index')->name('index');
