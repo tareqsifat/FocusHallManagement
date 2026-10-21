@@ -39,6 +39,7 @@ class ComplaintService
                 $complaint->student_profile_id = $profile->id;
                 $complaint->room_id = $roomId;
                 $complaint->photo_path = $photoPath;
+                $complaint->is_anonymous = (bool) ($data['is_anonymous'] ?? false);
                 $complaint->status = ComplaintStatus::Submitted;
                 $complaint->save();
 

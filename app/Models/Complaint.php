@@ -103,6 +103,15 @@ class Complaint extends Model
             && $this->resolved_at?->gte(now()->subDays(config('hall.reopen_days')));
     }
 
+    /**
+     * Name to show for someone who acted on this complaint. The student who filed an
+     * anonymous complaint appears as "Anonymous student" to viewers without viewReporter.
+     */
+    public function displayName(User $person, bool $reporterVisible): string
+    {
+        return ! $reporterVisible && $person->id === $this->student->user_id ? 'Anonymous student' : $person->name;
+    }
+
     public function locationLabel(): string
     {
         return $this->room ? "{$this->room->block->name} · Room {$this->room->room_no}" : (string) $this->location_text;

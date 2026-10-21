@@ -60,6 +60,17 @@ class ComplaintPolicy
         return $user->isHallAdmin() || $this->isAssignedTutor($user, $complaint);
     }
 
+    /**
+     * Who filed an anonymous complaint is visible only to the Provost and Super Admin
+     * (Section 5.2), and of course to the student who filed it.
+     */
+    public function viewReporter(User $user, Complaint $complaint): bool
+    {
+        return ! $complaint->is_anonymous
+            || $user->hasRole(RoleName::Provost, RoleName::SuperAdmin)
+            || $this->isOwner($user, $complaint);
+    }
+
     private function isOwner(User $user, Complaint $complaint): bool
     {
         return $user->studentProfile !== null && $complaint->student_profile_id === $user->studentProfile->id;

@@ -90,7 +90,7 @@ Every account uses the password **`password`**.
 | Super Admin | `admin@kjh.test` | Everything; create a club and pick its president |
 | Provost | `provost@kjh.test` | Dashboard, close or reject complaints, manage house tutors |
 | Hall Office Staff | `office@kjh.test` | Approve the 5 pending registrations, allocate and vacate seats, assign complaints |
-| House Tutor (North block) | `tutor@kjh.test` | Sees only North block students and complaints assigned to them |
+| House Tutor (North block) | `tutor@kjh.test` | Sees only North block students and complaints assigned to them. "Main gate left open after midnight" is anonymous: the tutor sees "Anonymous student", while the Provost sees the name. |
 | Club Admin (also a student) | `clubadmin@student.du.test` | President of the Debating Club: approve requests, post a Club notice |
 | Student (resident) | `student@student.du.test` | Lives in North block, has complaints in several states, one pending club request |
 
@@ -101,7 +101,7 @@ Other seeded logins, also with password `password`: `office2@kjh.test` and `tuto
 - 61 students: 40 residents spread across the blocks, 15 attached (3 of them former residents with allocation history), 5 pending and 1 rejected.
 - 5 house tutors covering all three blocks.
 - 4 clubs, each with a president, members and pending requests.
-- 24 complaints in every status. 6 are overdue and one was reopened by its student.
+- 24 complaints in every status. 6 are overdue, one was reopened by its student, and two are anonymous.
 - 12 notices: 2 drafts, 2 pinned and 2 with a PDF.
 
 A few names and one notice are in Bangla script to show Unicode support.
@@ -121,20 +121,20 @@ A few names and one notice are in Bangla script to show Unicode support.
 | **M5 Notices** | Public board (no login) showing published notices only, pinned first then newest, with search, category filter and pagination. Detail page and PDF download. Management page including drafts. |
 | **M6 Clubs** | Public directory with logo, admin and member count. Join requests, approve, reject and remove. Super Admin creates clubs and assigns admins. |
 | **M7 Dashboard** | Seats, occupancy %, pending registrations, open complaints by category, overdue count and average resolution time (last 30 days). House tutors see complaint figures for their blocks. |
+| **Anonymous complaints (bonus)** | A student can tick "Submit anonymously". Only the Provost and Super Admin (and the student) see who filed it. Everyone else sees "Anonymous student" in the reporter field, comments and status log. |
 | **Seeders** | Section 10 data and all six demo accounts with `php artisan migrate --seed`. |
-| **Tests** | 151 Pest tests. They cover BR-01 to BR-13 (BR-06 with valid and invalid transition datasets) and 403 checks for each module. A seeder test verifies the Section 10 counts and that every demo account logs in. |
+| **Tests** | 160 Pest tests. They cover BR-01 to BR-13 (BR-06 with valid and invalid transition datasets) and 403 checks for each module. A seeder test verifies the Section 10 counts and that every demo account logs in. |
 
 ### Partly done
 
 | Item | What is missing |
 |---|---|
-| Anonymous complaints (bonus) | The `complaints.is_anonymous` column exists, but there is no screen to set it and no logic to hide the student's name. |
 | Mobile check at 375 px | Every page is built mobile-first with Tailwind: stacked cards instead of wide tables, and a hamburger menu below 768 px. An automated browser pass at 375 px could not be completed because the browser tool could not reach the local server, so this was checked only through the markup. |
 
 ### Not done
 
 - **Demo screenshots or recording (Section 11, item 4):** not added yet.
-- **Bonus items:** JSON API (Section 8), events, polls, email notifications, Bangla/English toggle, CSV export, activity log, Docker, CI and live deployment. All data fields already accept Bangla text.
+- **Other bonus items:** JSON API (Section 8), events, polls, email notifications, Bangla/English toggle, CSV export, activity log, Docker, CI and live deployment. All data fields already accept Bangla text.
 - **Super Admin user and role management screen:** Super Admin can do everything through the module screens, but there is no generic "edit any user's roles" page. Roles are assigned through the flows that need them: registration (Student), house tutor creation (House Tutor) and club admin assignment (Club Admin).
 
 ---
@@ -184,6 +184,8 @@ The brief asks candidates to make a reasonable assumption and write it down when
 | Who can be assigned a complaint? | Active house tutors and Office Staff. A tutor does not have to belong to the complaint's block. |
 | "Open" for the dashboard and overdue | Submitted, Under Review and In Progress. Overdue means open and submitted more than 7 days ago (BR-10). |
 | Days open for finished complaints | Counted from submission to resolution. Rejected complaints show their submission date instead. |
+| Anonymous complaints: who sees the name? | Only the **Provost and Super Admin**, as Section 5.2 says, plus the student who filed it. Office Staff and the assigned house tutor see "Anonymous student" in the reporter field, the comments and the status log (submission and reopen entries). |
+| Anonymous complaints: is the room hidden? | No. The room or typed location is still shown, because staff need it to fix the problem. In a small room this can narrow down who filed it; the form says so before the student submits. |
 | Gaps in tracking numbers | If a submission fails after its number was issued, that number is skipped. IDs are never duplicated, which is what BR-09 requires (see the design decisions below). |
 
 ### Notices
@@ -281,7 +283,7 @@ The suggested model is followed closely. The differences:
 | `seat_allocations` | Added `vacated_by` and generated columns `active_seat_id`, `active_student_profile_id` | Audit of who vacated; DB-level BR-01/BR-02 |
 | `house_tutors` | No name or email columns | Name and email live on `users`, which the tutor logs in with |
 | `block_house_tutor` | Pivot | Many-to-many tutors and blocks |
-| `complaints` | Added `resolved_at` | Resolution time (BR-10) and the 7-day reopen window |
+| `complaints` | Added `resolved_at` | Resolution time (BR-10) and the 7-day reopen window. `is_anonymous` is used for the anonymous-complaint bonus. |
 | `complaint_counters` | New table (`year`, `last_number`) | Collision-free tracking IDs per year (BR-09) |
 | `club_admins` | Pivot with unique `user_id` | "Has admins", at most one club per admin |
 | `club_memberships` | Added `decided_at` and generated `open_student_profile_id` | Audit; DB-level BR-12 |
@@ -323,4 +325,5 @@ _The candidate should review and adjust this section so it matches how they work
 
 - **Claude Code (Anthropic, Claude Opus 5.5)** was used as a pair programmer throughout. It read the brief, proposed the data model and build order, and wrote the migrations, models, services, policies, controllers, Blade views, Pest tests and seeders, module by module. It ran the tests on SQLite and MySQL, ran Pint, and committed after each working unit.
 - **The candidate** reviewed each module before the next one started and made the product decisions where the brief was open. For example: adding `is_active` to house tutors; requiring club presidents to be students, with at most two admins per club and one club per student; letting the Super Admin pick admins while creating a club; and running the test suite against MySQL.
+- The candidate also asked for the anonymous-complaint bonus once the must-haves were done.
 - **Problems found by testing rather than by reading:** a tracking-ID deadlock under concurrent load, found by running 20 to 40 parallel processes against MySQL; a route-ordering bug (`/rooms/create` matched by `/rooms/{room}`); and services relying on `$fillable` to drop extra keys, found when the seeders ran unguarded.

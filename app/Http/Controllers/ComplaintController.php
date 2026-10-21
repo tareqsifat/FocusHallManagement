@@ -68,7 +68,9 @@ class ComplaintController extends Controller
             ? User::assignable()->with('roles')->orderBy('name')->get()
             : collect();
 
-        return view('complaints.show', compact('complaint', 'transitions', 'assignees'));
+        $reporterVisible = $user->can('viewReporter', $complaint);
+
+        return view('complaints.show', compact('complaint', 'transitions', 'assignees', 'reporterVisible'));
     }
 
     public function updateStatus(ComplaintStatusRequest $request, Complaint $complaint, ComplaintStatusService $service): RedirectResponse

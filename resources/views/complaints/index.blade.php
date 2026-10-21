@@ -51,10 +51,14 @@
                         @if ($complaint->isOverdue())
                             <x-overdue-badge />
                         @endif
+                        @if ($complaint->is_anonymous)
+                            <x-anonymous-badge />
+                        @endif
                     </div>
                     <p class="mt-1 font-medium text-gray-900">{{ $complaint->title }}</p>
                     <p class="text-sm text-gray-500">
-                        {{ $complaint->category->label() }} · {{ $complaint->locationLabel() }} · {{ $complaint->student->user->name }}
+                        {{ $complaint->category->label() }} · {{ $complaint->locationLabel() }}
+                        · {{ Auth::user()->can('viewReporter', $complaint) ? $complaint->student->user->name : 'Anonymous student' }}
                         · {{ $complaint->status->isFinished() ? 'submitted '.$complaint->created_at->format('d M Y') : $complaint->daysOpen().' '.Str::plural('day', $complaint->daysOpen()).' open' }}
                         @if ($complaint->assignee) · Assigned to {{ $complaint->assignee->name }} @endif
                     </p>

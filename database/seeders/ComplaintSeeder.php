@@ -12,10 +12,11 @@ use App\Services\ComplaintStatusService;
 use Illuminate\Database\Seeder;
 
 /**
- * 24 complaints across every status, 6 of them overdue, one reopened by its student.
+ * 24 complaints across every status, 6 of them overdue, one reopened by its student, two anonymous.
  * Each spec: [student key, category, title, description, submitted N days ago,
  *             assignee key or null (assigned the day after submission),
- *             [[status, days ago, actor key, note], ...], [[actor key, days ago, comment], ...]]
+ *             [[status, days ago, actor key, note], ...], [[actor key, days ago, comment], ...],
+ *             location text for attached students, anonymous (optional, default false)]
  */
 class ComplaintSeeder extends Seeder
 {
@@ -49,11 +50,13 @@ class ComplaintSeeder extends Seeder
 
         // Oldest first, so tracking numbers follow submission order.
         $specs = collect($this->specs())->sortByDesc(4)->values();
-        foreach ($specs as [$who, $category, $title, $description, $daysAgo, $assignee, $steps, $comments, $location]) {
+        foreach ($specs as $spec) {
+            [$who, $category, $title, $description, $daysAgo, $assignee, $steps, $comments, $location, $anonymous] = $spec + [9 => false];
             DatabaseSeeder::travelTo($daysAgo, 9);
             $student = $students[$who]->fresh();
             $complaint = $complaints->submit($student, [
                 'category' => $category, 'title' => $title, 'description' => $description, 'location_text' => $location,
+                'is_anonymous' => $anonymous,
             ], null);
 
             if ($assignee) {
@@ -86,8 +89,9 @@ class ComplaintSeeder extends Seeder
             ['n2', 'cleanliness', 'Corridor bins not emptied', 'The bins in the 2nd floor corridor have not been emptied for days.', 12, null, $none, $none, null],
             ['n3', 'furniture', 'Broken study table', 'One leg of my study table is broken.', 15, 'tutorN',
                 [[S::UnderReview, 14, 'office', null], [S::InProgress, 10, 'tutorN', null], [S::Resolved, 6, 'tutorN', 'Table replaced from the hall store.']], $none, null],
-            ['n4', 'security', 'Main gate left open after midnight', 'The North block gate was open after midnight on two nights.', 6, 'office',
-                [[S::UnderReview, 5, 'provost', 'Night guard roster to be checked.']], $none, null],
+            // Anonymous and assigned to the demo tutor: tutor@ and office@ see "Anonymous student", provost@ and admin@ see the name.
+            ['n4', 'security', 'Main gate left open after midnight', 'The North block gate was open after midnight on two nights.', 6, 'tutorN',
+                [[S::UnderReview, 5, 'provost', 'Night guard roster to be checked.']], [['owner', 4, 'It was open again last night.']], null, true],
             ['n5', 'water', 'Leaking tap in room', 'The tap in the washroom near my room leaks all the time.', 3, null,
                 [[S::Rejected, 2, 'office', 'Duplicate: the same tap is already being handled in another complaint.']], $none, null],
             ['n6', 'water', 'Washroom flush broken', 'The flush in the 1st floor washroom does not work.', 3, 'tutorN',
@@ -118,7 +122,7 @@ class ComplaintSeeder extends Seeder
             ['clubadmin', 'furniture', 'Chairs missing from the debate room', 'Twenty chairs were taken from the debate room and not returned.', 45, 'office',
                 [[S::UnderReview, 44, 'office', null], [S::InProgress, 43, 'office', null], [S::Resolved, 40, 'office', 'Chairs returned from the auditorium.'], [S::Closed, 38, 'provost', null]], $none, null],
             ['a1', 'security', 'Bicycle stolen from parking', 'My bicycle was taken from the stand near the main gate.', 13, 'office',
-                [[S::UnderReview, 12, 'provost', 'Checking CCTV footage.']], [['owner', 10, 'Any update on the footage?']], 'Bicycle stand near the main gate'],
+                [[S::UnderReview, 12, 'provost', 'Checking CCTV footage.']], [['owner', 10, 'Any update on the footage?']], 'Bicycle stand near the main gate', true],
             ['a2', 'other', 'Reading room closes too early', 'The reading room lights are switched off at 9 PM.', 5, null, $none, $none, 'Ground floor reading room'],
             ['a3', 'internet', 'Common room Wi-Fi password not shared', 'Attached students are not given the common room Wi-Fi password.', 16, null,
                 [[S::Rejected, 15, 'office', 'Hall Wi-Fi is for residents only; attached students can use the library network.']], $none, 'Common room'],

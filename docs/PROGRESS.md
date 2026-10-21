@@ -67,10 +67,11 @@
   - `SeederTest` checks every Section 10 count, that all six demo accounts log in and hold their roles, and that dashboard figures match.
   - Fixed along the way: services now pass explicit fields to `create`/`fill` instead of relying on `$fillable` to drop extra keys (seeders run unguarded and exposed it).
 
-- **README** at the repository root (Section 11). Setup verified from a fresh clone: `composer install`, `npm install && npm run build`, `.env`, `migrate --seed`, `php artisan test` (151 passed), Pint clean.
+- **README** at the repository root (Section 11). Setup verified from a fresh clone: `composer install`, `npm install && npm run build`, `.env`, `migrate --seed`, `php artisan test` (151 passed at the time; 160 after the anonymous-complaints bonus), Pint clean.
+
+- **Anonymous complaints (bonus)**: "Submit anonymously" checkbox on the complaint form. `ComplaintPolicy::viewReporter` allows only the Provost, the Super Admin and the student who filed it. `Complaint::displayName` masks the student as "Anonymous student" in the reporter field, comments and status log for everyone else. Two seeded anonymous complaints, one assigned to the demo tutor. Tests cover each role on the list and detail pages.
 
 ## Partly done
-- Anonymous complaints (bonus): column only, no UI.
 - 375 px check: built mobile-first, but the automated browser pass could not reach the local server.
 
 ## Not done

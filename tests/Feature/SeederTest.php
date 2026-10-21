@@ -44,7 +44,8 @@ test('seed data meets Section 10', function () {
 
     expect(Complaint::count())->toBeGreaterThanOrEqual(20)
         ->and(Complaint::distinct()->pluck('status')->count())->toBe(count(ComplaintStatus::cases()))
-        ->and(Complaint::overdue()->count())->toBeGreaterThanOrEqual(3);
+        ->and(Complaint::overdue()->count())->toBeGreaterThanOrEqual(3)
+        ->and(Complaint::where('is_anonymous', true)->count())->toBe(2);
 
     expect(Notice::count())->toBeGreaterThanOrEqual(10)
         ->and(Notice::where('status', NoticeStatus::Draft)->count())->toBe(2)
@@ -97,4 +98,14 @@ test('dashboard figures are consistent with the seeded data', function () {
         ->and($complaints['open_total'])->toBe(Complaint::open()->count())
         ->and($complaints['overdue'])->toBe(Complaint::overdue()->count())
         ->and($complaints['avg_resolution_days'])->not->toBeNull();
+});
+
+test('the demo tutor sees an anonymous complaint without the name; the provost sees it', function () {
+    $complaint = Complaint::where('is_anonymous', true)->where('assigned_to', User::where('email', 'tutor@kjh.test')->value('id'))->firstOrFail();
+    $name = $complaint->student->user->name;
+
+    $this->actingAs(User::where('email', 'tutor@kjh.test')->first())->get(route('complaints.show', $complaint))
+        ->assertOk()->assertSee('Anonymous student')->assertDontSee($name);
+    $this->actingAs(User::where('email', 'provost@kjh.test')->first())->get(route('complaints.show', $complaint))
+        ->assertOk()->assertSee($name);
 });

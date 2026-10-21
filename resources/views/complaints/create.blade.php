@@ -48,6 +48,18 @@
                     <x-input-error :messages="$errors->get('photo')" class="mt-2" />
                 </div>
 
+                <div class="rounded-md border border-gray-200 p-3">
+                    <label class="flex items-start gap-2 text-sm">
+                        <input type="hidden" name="is_anonymous" value="0">
+                        <input type="checkbox" name="is_anonymous" value="1" @checked(old('is_anonymous')) class="mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <span>
+                            <span class="font-medium text-gray-900">Submit anonymously</span>
+                            <span class="block text-gray-600">Hall office staff and house tutors will not see your name. Only the Provost and the Super Admin can see who filed it. Your room or location is still shown so the problem can be fixed.</span>
+                        </span>
+                    </label>
+                    <x-input-error :messages="$errors->get('is_anonymous')" class="mt-2" />
+                </div>
+
                 <x-primary-button>Submit complaint</x-primary-button>
             </form>
         </x-card>

@@ -18,6 +18,7 @@ class StoreComplaintRequest extends FormRequest
             'description' => ['required', 'string', 'max:5000'],
             // Residents get their room filled in; attached students must say where the problem is.
             'location_text' => [$isResident ? 'nullable' : 'required', 'string', 'max:255'],
+            'is_anonymous' => ['boolean'],
             // BR-13: content-sniffed type, extension and size (2 MB).
             'photo' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png', 'mimetypes:image/jpeg,image/png', 'max:2048'],
         ];

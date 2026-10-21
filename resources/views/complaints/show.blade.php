@@ -7,6 +7,9 @@
             @if ($complaint->isOverdue())
                 <x-overdue-badge />
             @endif
+            @if ($complaint->is_anonymous && $reporterVisible && ! $complaint->student->user->is(Auth::user()))
+                <span class="text-xs text-gray-500">Only the Provost and Super Admin can see who filed this.</span>
+            @endif
             <span>
                 @if ($complaint->resolved_at)
                     Resolved in {{ $complaint->daysOpen() }} {{ Str::plural('day', $complaint->daysOpen()) }}
@@ -23,7 +26,19 @@
                 <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div><dt class="text-gray-500">Category</dt><dd>{{ $complaint->category->label() }}</dd></div>
                     <div><dt class="text-gray-500">Location</dt><dd>{{ $complaint->locationLabel() }}</dd></div>
-                    <div><dt class="text-gray-500">Submitted by</dt><dd>{{ $complaint->student->user->name }} ({{ $complaint->student->registration_no }})</dd></div>
+                    <div>
+                        <dt class="text-gray-500">Submitted by</dt>
+                        <dd>
+                            @if ($reporterVisible)
+                                {{ $complaint->student->user->name }} ({{ $complaint->student->registration_no }})
+                            @else
+                                Anonymous student
+                            @endif
+                            @if ($complaint->is_anonymous)
+                                <x-anonymous-badge class="ms-1" />
+                            @endif
+                        </dd>
+                    </div>
                     <div><dt class="text-gray-500">Submitted</dt><dd>{{ $complaint->created_at->format('d M Y, h:i A') }}</dd></div>
                     <div><dt class="text-gray-500">Assigned to</dt><dd>{{ $complaint->assignee?->name ?? 'Not assigned' }}</dd></div>
                 </dl>
@@ -39,7 +54,7 @@
                 <ol class="space-y-4">
                     @forelse ($complaint->comments as $comment)
                         <li class="text-sm">
-                            <p><span class="font-medium">{{ $comment->user->name }}</span> <span class="text-gray-400">· {{ $comment->created_at->format('d M Y, h:i A') }}</span></p>
+                            <p><span class="font-medium">{{ $complaint->displayName($comment->user, $reporterVisible) }}</span> <span class="text-gray-400">· {{ $comment->created_at->format('d M Y, h:i A') }}</span></p>
                             <p class="whitespace-pre-line text-gray-800">{{ $comment->body }}</p>
                         </li>
                     @empty
@@ -110,7 +125,7 @@
                             <p class="font-medium">
                                 @if ($log->from_status) {{ $log->from_status->label() }} → @endif{{ $log->to_status->label() }}
                             </p>
-                            <p class="text-gray-500">{{ $log->changedBy->name }} · {{ $log->created_at->format('d M Y, h:i A') }}</p>
+                            <p class="text-gray-500">{{ $complaint->displayName($log->changedBy, $reporterVisible) }} · {{ $log->created_at->format('d M Y, h:i A') }}</p>
                             @if ($log->note)
                                 <p class="mt-1 whitespace-pre-line text-gray-700">{{ $log->note }}</p>
                             @endif
