@@ -9,6 +9,9 @@ return [
 
     'reopen_days' => 7,
 
+    // A club is led by its president (a student) plus at most one more admin.
+    'club_max_admins' => 2,
+
     'departments' => [
         'Accounting', 'Applied Mathematics', 'Bangla', 'Botany', 'Chemistry',
         'Computer Science and Engineering', 'Economics', 'English', 'Finance',

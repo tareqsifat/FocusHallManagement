@@ -167,3 +167,15 @@ test('club pages render', function () {
     $this->actingAs($this->superAdmin)->get(route('clubs.edit', $this->club))->assertOk()->assertSee('Club admins');
     $this->actingAs($this->student)->get(route('clubs.show', $this->club))->assertOk()->assertSee('Your request is pending');
 });
+
+test('a club can have at most two admins', function () {
+    $ids = User::factory()->student()->count(3)->create()->pluck('id')->all();
+
+    $this->actingAs($this->superAdmin)->put(route('clubs.admins', $this->club), ['admin_ids' => $ids])
+        ->assertSessionHasErrors(['admin_ids' => 'A club can have at most 2 admins.']);
+    expect($this->club->admins()->pluck('users.id')->all())->toBe([$this->clubAdmin->id]);
+
+    $this->actingAs($this->superAdmin)->put(route('clubs.admins', $this->club), ['admin_ids' => array_slice($ids, 0, 2)])
+        ->assertSessionHasNoErrors();
+    expect($this->club->admins()->count())->toBe(2);
+});

@@ -37,7 +37,7 @@
                     <form method="POST" action="{{ route('clubs.admins', $club) }}" class="space-y-3">
                         @csrf
                         @method('PUT')
-                        <x-input-label for="admin_ids" value="Students who lead this club (Ctrl/Cmd-click to pick several)" />
+                        <x-input-label for="admin_ids" :value="'Club president and admins: approved students, up to '.config('hall.club_max_admins').' (Ctrl/Cmd-click to pick two)'" />
                         @php $selected = collect(old('admin_ids', $club->admins->pluck('id')))->map(fn ($id) => (int) $id); @endphp
                         <select id="admin_ids" name="admin_ids[]" multiple size="8" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                             @foreach ($students as $student)
