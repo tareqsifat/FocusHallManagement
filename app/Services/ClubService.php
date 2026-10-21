@@ -11,6 +11,17 @@ use Illuminate\Support\Facades\Storage;
 
 class ClubService
 {
+    /** Creates the club and, optionally, its admins in one go. */
+    public function create(array $data, ?UploadedFile $logo, array $adminIds): Club
+    {
+        return DB::transaction(function () use ($data, $logo, $adminIds) {
+            $club = $this->save(new Club, $data, $logo);
+            $this->syncAdmins($club, $adminIds);
+
+            return $club;
+        });
+    }
+
     public function save(Club $club, array $data, ?UploadedFile $logo): Club
     {
         $club->fill($data);

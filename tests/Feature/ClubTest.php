@@ -162,18 +162,43 @@ test('the club admin edits their club page and uploads a logo', function () {
     $this->get(route('clubs.logo', $club))->assertOk();
 });
 
-test('only super admin creates clubs', function () {
+test('only super admin creates clubs; admins are optional at creation', function () {
     $this->actingAs($this->clubAdmin)->post(route('clubs.store'), ['name' => 'Chess', 'description' => 'x'])->assertForbidden();
     $this->actingAs($this->superAdmin)->post(route('clubs.store'), ['name' => 'Chess', 'description' => 'Board games.'])
         ->assertSessionHasNoErrors();
-    expect(Club::where('name', 'Chess')->exists())->toBeTrue();
+
+    expect(Club::where('name', 'Chess')->first()->admins()->count())->toBe(0);
+});
+
+test('super admin can pick the president when creating a club', function () {
+    $president = User::factory()->student()->create();
+
+    $this->actingAs($this->superAdmin)->post(route('clubs.store'), [
+        'name' => 'Science Club', 'description' => 'Experiments.', 'admin_ids' => [$president->id],
+    ])->assertSessionHasNoErrors();
+
+    $club = Club::where('name', 'Science Club')->first();
+    expect($club->admins()->pluck('users.id')->all())->toBe([$president->id])
+        ->and($president->fresh()->hasRole(RoleName::ClubAdmin))->toBeTrue();
+});
+
+test('creating a club applies the same admin rules and saves nothing on failure', function () {
+    $ids = User::factory()->student()->count(3)->create()->pluck('id')->all();
+
+    $this->actingAs($this->superAdmin)->post(route('clubs.store'), ['name' => 'Too many', 'description' => 'x', 'admin_ids' => $ids])
+        ->assertSessionHasErrors(['admin_ids' => 'A club can have at most 2 admins.']);
+    $this->actingAs($this->superAdmin)->post(route('clubs.store'), ['name' => 'Taken', 'description' => 'x', 'admin_ids' => [$this->clubAdmin->id]])
+        ->assertSessionHasErrors(['admin_ids.0' => 'This student is already an admin of another club.']);
+
+    expect(Club::whereIn('name', ['Too many', 'Taken'])->exists())->toBeFalse();
 });
 
 test('club pages render', function () {
     join_club($this, $this->student, $this->club);
 
     $this->actingAs($this->clubAdmin)->get(route('clubs.manage', $this->club))->assertOk()->assertSee($this->student->name);
-    $this->actingAs($this->superAdmin)->get(route('clubs.create'))->assertOk();
+    $this->actingAs($this->superAdmin)->get(route('clubs.create'))->assertOk()
+        ->assertSee('Club president and admins')->assertDontSee($this->clubAdmin->name);
     $this->actingAs($this->superAdmin)->get(route('clubs.edit', $this->club))->assertOk()->assertSee('Club admins');
     $this->actingAs($this->student)->get(route('clubs.show', $this->club))->assertOk()->assertSee('Your request is pending');
 });

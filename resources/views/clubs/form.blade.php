@@ -27,6 +27,10 @@
                     <input id="logo" name="logo" type="file" accept="image/jpeg,image/png" class="mt-2 block w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm">
                     <x-input-error :messages="$errors->get('logo')" class="mt-2" />
                 </div>
+                @unless ($club->exists)
+                    @include('clubs._admin-picker', ['optional' => true])
+                @endunless
+
                 <x-primary-button>Save</x-primary-button>
             </form>
         </x-card>
@@ -37,15 +41,7 @@
                     <form method="POST" action="{{ route('clubs.admins', $club) }}" class="space-y-3">
                         @csrf
                         @method('PUT')
-                        <x-input-label for="admin_ids" :value="'Club president and admins: approved students, up to '.config('hall.club_max_admins').' (Ctrl/Cmd-click to pick two)'" />
-                        @php $selected = collect(old('admin_ids', $club->admins->pluck('id')))->map(fn ($id) => (int) $id); @endphp
-                        <select id="admin_ids" name="admin_ids[]" multiple size="8" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                            @foreach ($students as $student)
-                                <option value="{{ $student->id }}" @selected($selected->contains($student->id))>{{ $student->name }} ({{ $student->studentProfile?->registration_no }})</option>
-                            @endforeach
-                        </select>
-                        <x-input-error :messages="$errors->get('admin_ids')" />
-                        <x-input-error :messages="$errors->get('admin_ids.*')" />
+                        @include('clubs._admin-picker')
                         <x-primary-button>Save admins</x-primary-button>
                     </form>
                 </x-card>

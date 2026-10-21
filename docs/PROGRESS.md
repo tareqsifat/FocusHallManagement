@@ -47,7 +47,7 @@
   - Public directory and club page: logo, admins, active member count. Approved students request to join (BR-03); the page shows their current request state.
   - BR-12: one pending or active request per student per club, checked in `ClubMembershipService` and backed by a unique index on a stored generated column that is only set while the request is open. Rejected or removed students may ask again.
   - Club admins (and Super Admin) edit their own club page and approve, reject or remove members of their own club only; other clubs return 403. Decisions apply only to the right state (approve/reject pending, remove active), under a row lock.
-  - Super Admin creates clubs and assigns admins (approved students only, at most two per club). The `club_admin` role follows the pivot: gained when assigned, dropped when removed. A student can lead only one club.
+  - Super Admin creates clubs and can pick the admins on the same form (optional; a club can start without one and get admins later from Edit). Same rules everywhere: approved students only, at most two per club, one club per student. The `club_admin` role follows the pivot: gained when assigned, dropped when removed. A student can lead only one club.
   - Logos (JPG/PNG ≤ 1 MB) stored under generated names on the private disk and served by a route, so no `storage:link` step is needed.
   - Tests: BR-12 (service and DB index), re-request after rejection, own-club scoping (403), BR-03, admin assignment and role sync, logo upload.
 
@@ -58,6 +58,7 @@
 - M7 Dashboard, seeders, README.
 
 ## Assumptions
+- **(Keep in final README)** Only the Super Admin creates clubs and assigns their admins, as the brief's matrix says; the Provost has no club permissions. Admins are optional at creation so a club can be set up before its president is chosen; until then the Super Admin can handle membership requests.
 - **(Keep in final README)** A club's president (its club admin) must be an approved student. A club can have at most two admins (the president plus one more), configurable as `hall.club_max_admins`. A student can be admin of only one club (unique `club_admins.user_id`, plus a validation message).
 - Club logos are public (the directory is public); they are still served through a route rather than a public symlink.
 - Notice bodies are plain text (line breaks kept, HTML escaped) to rule out stored XSS.

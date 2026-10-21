@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\ClubService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -53,29 +54,35 @@ class ClubController extends Controller
 
     public function create(): View
     {
-        return view('clubs.form', ['club' => new Club]);
+        return view('clubs.form', ['club' => new Club, 'students' => $this->eligibleAdmins(null)]);
     }
 
     public function store(ClubRequest $request, ClubService $service): RedirectResponse
     {
-        $club = $service->save(new Club, $request->validated(), $request->file('logo'));
+        $adminIds = array_map('intval', $request->validated('admin_ids', []));
+        $club = $service->create($request->safe()->except('admin_ids'), $request->file('logo'), $adminIds);
 
-        return redirect()->route('clubs.edit', $club)->with('status', 'Club created. Now assign its admins.');
+        return redirect()->route('clubs.show', $club)
+            ->with('status', $adminIds ? 'Club created.' : 'Club created without an admin. You can assign one from Edit.');
     }
 
     public function edit(Request $request, Club $club): View
     {
         $club->load('admins');
-        $students = $request->user()->can('assignAdmins', $club)
-            ? User::where('status', UserStatus::Active)
-                ->whereHas('roles', fn ($q) => $q->where('name', RoleName::Student))
-                ->whereDoesntHave('administeredClubs', fn ($q) => $q->whereKeyNot($club->id))
-                ->with('studentProfile')
-                ->orderBy('name')
-                ->get()
-            : collect();
+        $students = $request->user()->can('assignAdmins', $club) ? $this->eligibleAdmins($club) : collect();
 
         return view('clubs.form', compact('club', 'students'));
+    }
+
+    /** Approved students who do not already lead a different club. */
+    private function eligibleAdmins(?Club $club): Collection
+    {
+        return User::where('status', UserStatus::Active)
+            ->whereHas('roles', fn ($q) => $q->where('name', RoleName::Student))
+            ->whereDoesntHave('administeredClubs', fn ($q) => $q->when($club, fn ($q) => $q->whereKeyNot($club->id)))
+            ->with('studentProfile')
+            ->orderBy('name')
+            ->get();
     }
 
     public function update(ClubRequest $request, Club $club, ClubService $service): RedirectResponse

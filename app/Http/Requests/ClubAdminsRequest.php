@@ -12,7 +12,21 @@ class ClubAdminsRequest extends FormRequest
 {
     public function rules(): array
     {
-        // Club admins (the president and at most one other) must be approved students.
+        return self::adminRules($this->route('club')->id);
+    }
+
+    public function messages(): array
+    {
+        return self::adminMessages();
+    }
+
+    /**
+     * Shared with ClubRequest, which accepts admins when a club is created.
+     * Club admins (the president and at most one other) must be approved students
+     * who do not already lead another club.
+     */
+    public static function adminRules(?int $clubId): array
+    {
         $eligible = User::where('status', UserStatus::Active)
             ->whereHas('roles', fn ($q) => $q->where('name', RoleName::Student))
             ->pluck('id');
@@ -21,13 +35,12 @@ class ClubAdminsRequest extends FormRequest
             'admin_ids' => ['array', 'max:'.config('hall.club_max_admins')],
             'admin_ids.*' => [
                 'integer', 'distinct', Rule::in($eligible),
-                // A student can lead only one club.
-                Rule::unique('club_admins', 'user_id')->whereNot('club_id', $this->route('club')->id),
+                Rule::unique('club_admins', 'user_id')->when($clubId, fn ($rule) => $rule->whereNot('club_id', $clubId)),
             ],
         ];
     }
 
-    public function messages(): array
+    public static function adminMessages(): array
     {
         return [
             'admin_ids.*.in' => 'Club admins must be approved students.',
