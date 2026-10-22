@@ -4,6 +4,18 @@
 
 All data is fictional. The hall name sets the scene only.
 
+**Live demo:** <https://hall.167-71-235-164.sslip.io/>. Log in with any of the [demo accounts](#demo-accounts).
+
+**Documents:**
+
+| File | What it covers |
+|---|---|
+| [HOW_TO_USE.md](HOW_TO_USE.md) | Role-by-role guide, from Super Admin to Student, with a full end-to-end story |
+| [docs/CLAUDE.md](docs/CLAUDE.md) | The plan: stack, build order and architecture rules set before coding |
+| [docs/PROGRESS.md](docs/PROGRESS.md) | Progress log kept module by module during the build |
+| [docs/visual-report.md](docs/visual-report.md) | UI check against the brief's design requirements, locally and on the live site |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Docker, CI and server deployment |
+
 ---
 
 ## Contents
@@ -152,15 +164,16 @@ Ten screenshots of the seeded demo data are in [`docs/screenshots/`](docs/screen
 | **Users and roles** | Super Admin only: a **Users** screen listing staff accounts with an **Update role** button to set Super Admin, Provost and Hall Office Staff. Everyone else gets 403. |
 | **Anonymous complaints (bonus)** | A student can tick "Submit anonymously". Only the Provost and Super Admin (and the student) see who filed it. Everyone else sees "Anonymous student" in the reporter field, comments and status log, and sees only the block, not the room number. |
 | **Seeders** | Section 10 data and all six demo accounts with `php artisan migrate --seed`. |
-| **Tests** | 174 Pest tests. They cover BR-01 to BR-13 (BR-06 with valid and invalid transition datasets) and 403 checks for each module. A seeder test verifies the Section 10 counts and that every demo account logs in. |
+| **Tests** | 180 Pest tests. They cover BR-01 to BR-13 (BR-06 with valid and invalid transition datasets) and 403 checks for each module. A seeder test verifies the Section 10 counts and that every demo account logs in. |
 | **Mobile at 375 px** | Built mobile-first with Tailwind: stacked cards instead of wide tables, and a hamburger menu below 768 px. Checked in headless Chrome at a 375 px viewport: 32 pages across all six roles (lists, detail pages and forms), none with horizontal scrolling. |
 | **Demo (Section 11, item 4)** | Ten screenshots in `docs/screenshots/`, listed under [Screenshots](#screenshots). |
+| **Live deployment (bonus)** | Running at <https://hall.167-71-235-164.sslip.io/> with Docker on a DigitalOcean Droplet. Checked on 22 Oct 2026 as a guest, Office Staff, Student and House Tutor: 64 page loads at 375 px with no horizontal scrolling. See [docs/visual-report.md](docs/visual-report.md). |
 
 ### Partly done
 
 Nothing in the must-have scope.
 
-- **Docker, CI and deployment (bonus):** a Dockerfile (PHP 8.3.36), local `docker compose`, and a GitHub Actions pipeline (tests → image on GHCR → zero-downtime release on a DigitalOcean Droplet) are written but not yet verified end to end. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+- **CI pipeline (bonus):** the Dockerfile (PHP 8.3.36), local `docker compose` and the GitHub Actions pipeline (tests → image on GHCR → zero-downtime release on the Droplet) are written and the app is live, but the full pipeline has not been verified end to end. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ### Not done
 
@@ -357,3 +370,4 @@ _To be filled in by the candidate._
 - **Review round.** The candidate then asked Claude Code to assume the app was wrong and try to prove it against the brief. It wrote temporary probe tests (deleted afterwards) and reported each gap it confirmed. This led to the Users and roles screen, final Closed/Rejected complaints, same-block tutor assignment, hiding the room number on anonymous complaints, drafts returning 404 for everyone, and the composer fix for PHP 8.3.
 - **Screenshots and the 375 px check** were taken by Claude Code with headless Chrome (via `puppeteer-core`, installed outside this repository) against a seeded copy of the database, logged in as each demo account.
 - **Problems found by testing rather than by reading:** a tracking-ID deadlock under concurrent load, found by running 20 to 40 parallel processes against MySQL; a route-ordering bug (`/rooms/create` matched by `/rooms/{room}`); and services relying on `$fillable` to drop extra keys, found when the seeders ran unguarded.
+- **UI and live check.** Claude Code (with Claude in Chrome) checked the UI against the brief's design requirements, locally and on the live site, at 375 px for each role. This found and fixed: Laravel's default 403/404 pages, generic browser tab titles, a raw "profile-updated" success banner, and two complaint badges with no colour on the live build because Tailwind did not scan `app/`. The candidate logged in to the live site by hand for each role. Results are in [docs/visual-report.md](docs/visual-report.md).

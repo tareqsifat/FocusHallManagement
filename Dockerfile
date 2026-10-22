@@ -53,6 +53,8 @@ COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY vite.config.js tailwind.config.js postcss.config.js ./
 COPY resources ./resources
+# Tailwind also scans app/ for class names kept in PHP (e.g. badge colours on enums)
+COPY app ./app
 # Tailwind scans Laravel's pagination views for class names (tailwind.config.js)
 COPY --from=deps /var/www/html/vendor/laravel/framework/src/Illuminate/Pagination/resources/views \
     ./vendor/laravel/framework/src/Illuminate/Pagination/resources/views
