@@ -65,7 +65,7 @@ class ComplaintController extends Controller
             ->filter(fn (ComplaintStatus $to) => $user->can('transition', [$complaint, $to]))
             ->values();
         $assignees = $user->can('assign', $complaint)
-            ? User::assignable()->with('roles')->orderBy('name')->get()
+            ? User::assignableTo($complaint)->with('roles')->orderBy('name')->get()
             : collect();
 
         $reporterVisible = $user->can('viewReporter', $complaint);

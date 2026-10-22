@@ -94,13 +94,20 @@ class User extends Authenticatable
         $this->unsetRelation('roles');
     }
 
-    /** Active office staff and active house tutors: the people a complaint can be assigned to. */
-    public function scopeAssignable(Builder $query): void
+    /**
+     * The people a complaint can be assigned to: active office staff, and active house tutors
+     * of the complaint's block (any tutor when it has no room), so the tutor's dashboard counts it.
+     */
+    public function scopeAssignableTo(Builder $query, Complaint $complaint): void
     {
+        $blockId = $complaint->loadMissing('room')->room?->block_id;
+
         $query->where('status', UserStatus::Active)
             ->where(fn ($q) => $q
                 ->whereHas('roles', fn ($r) => $r->where('name', RoleName::OfficeStaff))
-                ->orWhereHas('houseTutor', fn ($t) => $t->where('is_active', true)));
+                ->orWhereHas('houseTutor', fn ($t) => $t
+                    ->where('is_active', true)
+                    ->when($blockId, fn ($t) => $t->whereHas('blocks', fn ($b) => $b->where('blocks.id', $blockId)))));
     }
 
     public function removeRole(RoleName $role): void

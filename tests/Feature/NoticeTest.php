@@ -143,5 +143,13 @@ test('notice management pages render', function () {
     $this->actingAs($this->office)->get(route('admin.notices.index'))->assertOk()->assertSee($notice->title);
     $this->actingAs($this->office)->get(route('admin.notices.create'))->assertOk();
     $this->actingAs($this->office)->get(route('admin.notices.edit', $notice))->assertOk();
-    $this->actingAs($this->office)->get(route('notices.show', $notice))->assertOk()->assertSee('Draft preview');
+});
+
+test('BR-11: a draft is not visible at its public URL even to its editors', function () {
+    $notice = Notice::factory()->draft()->create(['created_by' => $this->office->id]);
+    $admin = User::factory()->withRole(RoleName::SuperAdmin)->create();
+
+    $this->actingAs($this->office)->get(route('notices.show', $notice))->assertNotFound();
+    $this->actingAs($admin)->get(route('notices.show', $notice))->assertNotFound();
+    $this->actingAs($this->office)->get(route('notices.attachment', $notice))->assertNotFound();
 });

@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout :title="$complaint->tracking_id">
     <x-slot name="header">
         <p class="font-mono text-sm text-gray-500">{{ $complaint->tracking_id }}</p>
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $complaint->title }}</h2>
@@ -25,7 +25,7 @@
             <x-card title="Details">
                 <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div><dt class="text-gray-500">Category</dt><dd>{{ $complaint->category->label() }}</dd></div>
-                    <div><dt class="text-gray-500">Location</dt><dd>{{ $complaint->locationLabel() }}</dd></div>
+                    <div><dt class="text-gray-500">Location</dt><dd>{{ $complaint->locationLabel($reporterVisible) }}</dd></div>
                     <div>
                         <dt class="text-gray-500">Submitted by</dt>
                         <dd>

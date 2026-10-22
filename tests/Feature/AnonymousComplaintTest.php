@@ -4,6 +4,7 @@ use App\Enums\ComplaintStatus;
 use App\Enums\RoleName;
 use App\Models\Complaint;
 use App\Models\HouseTutor;
+use App\Models\Room;
 use App\Models\User;
 use App\Services\ComplaintStatusService;
 
@@ -74,4 +75,19 @@ test('complaints are not anonymous unless the student asks', function () {
 
     expect($named->is_anonymous)->toBeFalse();
     $this->actingAs($this->office)->get(route('complaints.show', $named))->assertSee('Hidden Reporter');
+});
+
+test('the room number of an anonymous complaint is shown only to those who may see the reporter', function () {
+    $room = Room::factory()->create(['room_no' => '305']);
+    $this->complaint->forceFill(['room_id' => $room->id])->save();
+
+    foreach ([$this->office, $this->tutor] as $viewer) {
+        $this->actingAs($viewer)->get(route('complaints.show', $this->complaint))
+            ->assertSee("{$room->block->name} block")->assertDontSee('Room 305');
+        $this->actingAs($viewer)->get(route('complaints.index'))->assertDontSee('Room 305');
+    }
+
+    $provost = User::factory()->withRole(RoleName::Provost)->create();
+    $this->actingAs($provost)->get(route('complaints.show', $this->complaint))->assertSee('Room 305');
+    $this->actingAs($this->student)->get(route('complaints.show', $this->complaint))->assertSee('Room 305');
 });

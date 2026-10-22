@@ -55,6 +55,12 @@ enum ComplaintStatus: string
         return in_array($this, self::finished(), true);
     }
 
+    /** Closed and Rejected are final: no further status change, assignment or comment. */
+    public function isLocked(): bool
+    {
+        return $this->allowedTransitions() === [];
+    }
+
     public function badgeClasses(): string
     {
         return match ($this) {

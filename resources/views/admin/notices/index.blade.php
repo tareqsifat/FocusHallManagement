@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Manage notices">
     <x-slot name="header">
         <div class="flex items-center justify-between gap-4">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Manage notices</h2>
@@ -29,7 +29,9 @@
                         <p class="text-xs text-gray-500">By {{ $notice->author->name }} · updated {{ $notice->updated_at->diffForHumans() }}</p>
                     </div>
                     <div class="flex items-center gap-4 shrink-0 text-sm">
-                        <a href="{{ route('notices.show', $notice) }}" class="text-gray-700 hover:underline">View</a>
+                        @if ($notice->isPublished())
+                            <a href="{{ route('notices.show', $notice) }}" class="text-gray-700 hover:underline">View</a>
+                        @endif
                         <a href="{{ route('admin.notices.edit', $notice) }}" class="text-indigo-700 hover:underline">Edit</a>
                         <form method="POST" action="{{ route('admin.notices.destroy', $notice) }}" onsubmit="return confirm('Delete this notice?')">
                             @csrf

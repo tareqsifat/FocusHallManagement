@@ -20,10 +20,10 @@ class NoticePolicy
         return $this->publishes($user);
     }
 
-    /** Public pages show published notices to anyone; drafts only to people who can edit them (BR-11). */
+    /** Public pages show published notices only, even to the people who can edit a draft (BR-11). */
     public function view(?User $user, Notice $notice): bool
     {
-        return $notice->isPublished() || ($user && $this->update($user, $notice));
+        return $notice->isPublished();
     }
 
     public function update(User $user, Notice $notice): bool

@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="New complaint">
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">New complaint</h2>
     </x-slot>
@@ -54,7 +54,7 @@
                         <input type="checkbox" name="is_anonymous" value="1" @checked(old('is_anonymous')) class="mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                         <span>
                             <span class="font-medium text-gray-900">Submit anonymously</span>
-                            <span class="block text-gray-600">Hall office staff and house tutors will not see your name. Only the Provost and the Super Admin can see who filed it. Your room or location is still shown so the problem can be fixed.</span>
+                            <span class="block text-gray-600">Hall office staff and house tutors will not see your name. Only the Provost and the Super Admin can see who filed it. Your block or typed location is still shown so the problem can be fixed, but not your room number.</span>
                         </span>
                     </label>
                     <x-input-error :messages="$errors->get('is_anonymous')" class="mt-2" />

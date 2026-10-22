@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout :title="$club->exists ? 'Edit '.$club->name : 'New club'">
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $club->exists ? "Edit {$club->name}" : 'New club' }}</h2>
     </x-slot>

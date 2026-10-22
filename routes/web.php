@@ -13,6 +13,7 @@ use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\SeatAllocationController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\UserRoleController;
 use App\Models\Club;
 use App\Models\Complaint;
 use App\Models\HouseTutor;
@@ -38,6 +39,9 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    Route::get('/users', [UserRoleController::class, 'index'])->can('manageRoles', User::class)->name('users.index');
+    Route::put('/users/{user}/roles', [UserRoleController::class, 'update'])->can('updateRoles', 'user')->name('users.roles');
 
     Route::get('/registrations', [RegistrationController::class, 'index'])
         ->can('reviewRegistrations', User::class)->name('registrations.index');

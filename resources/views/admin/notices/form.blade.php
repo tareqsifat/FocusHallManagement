@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout :title="$notice->exists ? 'Edit notice' : 'New notice'">
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $notice->exists ? 'Edit notice' : 'New notice' }}</h2>
     </x-slot>
@@ -52,7 +52,11 @@
                     <x-input-label for="attachment" value="PDF attachment (optional, up to 5 MB)" />
                     @if ($notice->attachment_path)
                         <p class="mt-1 text-sm">
-                            <a href="{{ route('notices.attachment', $notice) }}" class="text-indigo-700 hover:underline">Current attachment</a>
+                            @if ($notice->isPublished())
+                                <a href="{{ route('notices.attachment', $notice) }}" class="text-indigo-700 hover:underline">Current attachment</a>
+                            @else
+                                <span class="text-gray-700">A PDF is attached.</span>
+                            @endif
                             <label class="ms-3 inline-flex items-center gap-1 text-gray-600">
                                 <input type="hidden" name="remove_attachment" value="0">
                                 <input type="checkbox" name="remove_attachment" value="1" class="rounded border-gray-300"> Remove

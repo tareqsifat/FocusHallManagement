@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Complaints">
     <x-slot name="header">
         <div class="flex items-center justify-between gap-4">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Complaints</h2>
@@ -57,8 +57,9 @@
                     </div>
                     <p class="mt-1 font-medium text-gray-900">{{ $complaint->title }}</p>
                     <p class="text-sm text-gray-500">
-                        {{ $complaint->category->label() }} · {{ $complaint->locationLabel() }}
-                        · {{ Auth::user()->can('viewReporter', $complaint) ? $complaint->student->user->name : 'Anonymous student' }}
+                        @php($reporterVisible = Auth::user()->can('viewReporter', $complaint))
+                        {{ $complaint->category->label() }} · {{ $complaint->locationLabel($reporterVisible) }}
+                        · {{ $reporterVisible ? $complaint->student->user->name : 'Anonymous student' }}
                         · {{ $complaint->status->isFinished() ? 'submitted '.$complaint->created_at->format('d M Y') : $complaint->daysOpen().' '.Str::plural('day', $complaint->daysOpen()).' open' }}
                         @if ($complaint->assignee) · Assigned to {{ $complaint->assignee->name }} @endif
                     </p>

@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout :title="$tutor->exists ? 'Edit '.$tutor->user->name : 'New house tutor'">
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $tutor->exists ? 'Edit '.$tutor->user->name : 'New house tutor' }}</h2>
     </x-slot>

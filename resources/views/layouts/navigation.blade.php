@@ -11,6 +11,7 @@
         ['Blocks', 'blocks.index', $user->can('view-hall')],
         ['Clubs', 'clubs.index', true],
         ['House tutors', 'house-tutors.index', $user->can('viewAny', App\Models\HouseTutor::class)],
+        ['Users', 'users.index', $user->can('manageRoles', App\Models\User::class)],
         ['My hall profile', 'students.show', $user->studentProfile && ! $user->can('viewAny', App\Models\StudentProfile::class), $user->studentProfile],
     ])->filter(fn ($link) => $link[2] && Route::has($link[1]))
         ->map(fn ($link) => $link + [3 => []]);

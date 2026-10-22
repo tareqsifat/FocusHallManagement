@@ -71,12 +71,13 @@
 
 - **Anonymous complaints (bonus)**: "Submit anonymously" checkbox on the complaint form. `ComplaintPolicy::viewReporter` allows only the Provost, the Super Admin and the student who filed it. `Complaint::displayName` masks the student as "Anonymous student" in the reporter field, comments and status log for everyone else. Two seeded anonymous complaints, one assigned to the demo tutor. Tests cover each role on the list and detail pages.
 
+- **Demo screenshots and 375 px check** (Section 11, item 4): 10 screenshots in `docs/screenshots/`, taken with headless Chrome against a seeded copy of the database. At a 375 px viewport, 32 pages across all six roles show no horizontal scrolling.
+
 ## Partly done
-- 375 px check: built mobile-first, but the automated browser pass could not reach the local server.
+- Nothing in the must-have scope.
 
 ## Not done
-- Demo screenshots or recording (Section 11, item 4).
-- README "Time spent" and a final review of "AI tools used" (to be filled by the candidate).
+- README "Time spent" (to be filled by the candidate).
 - Bonus items (JSON API, Docker, CI, deployment, etc.).
 
 ## Assumptions

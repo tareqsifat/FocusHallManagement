@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout :title="$block->exists ? 'Edit '.$block->name : 'New block'">
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $block->exists ? "Edit {$block->name}" : 'New block' }}</h2>
     </x-slot>

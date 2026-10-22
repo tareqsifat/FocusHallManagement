@@ -1,4 +1,4 @@
-<x-guest-layout>
+<x-guest-layout title="Register">
     <h1 class="text-lg font-semibold text-gray-900">Student registration</h1>
     <p class="mt-1 text-sm text-gray-600">Your account stays pending until the hall office approves it.</p>
 

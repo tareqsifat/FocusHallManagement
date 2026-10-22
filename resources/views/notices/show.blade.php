@@ -2,9 +2,6 @@
     <a href="{{ route('notices.index') }}" class="text-sm text-indigo-700 hover:underline">← All notices</a>
 
     <article class="mt-4 rounded-lg bg-white p-6 shadow-sm">
-        @unless ($notice->isPublished())
-            <p class="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">Draft preview. This notice is not public.</p>
-        @endunless
         <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
             <x-notice-category :category="$notice->category" />
             @if ($notice->published_at)

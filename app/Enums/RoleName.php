@@ -11,6 +11,18 @@ enum RoleName: string
     case ClubAdmin = 'club_admin';
     case Student = 'student';
 
+    /**
+     * Roles the Super Admin sets on the Users screen. Student, House Tutor and Club Admin
+     * come with a record of their own (registration, tutor profile, club), so they are
+     * given and removed by those flows instead.
+     *
+     * @return list<self>
+     */
+    public static function editable(): array
+    {
+        return [self::SuperAdmin, self::Provost, self::OfficeStaff];
+    }
+
     public function label(): string
     {
         return match ($this) {

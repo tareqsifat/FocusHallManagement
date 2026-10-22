@@ -10,6 +10,12 @@ use Illuminate\Validation\Rule;
 
 class ProfileUpdateRequest extends FormRequest
 {
+    /** Student details come from the university record, so students cannot change them here. */
+    public function authorize(): bool
+    {
+        return ! $this->user()->hasRole(RoleName::Student);
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -26,7 +32,6 @@ class ProfileUpdateRequest extends FormRequest
                 'email',
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
-                ...($this->user()->hasRole(RoleName::Student) ? ['ends_with:@student.du.test'] : []),
             ],
         ];
     }

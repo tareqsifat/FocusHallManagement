@@ -57,3 +57,20 @@ test('users cannot delete their own account', function () {
     $this->actingAs($user)->delete('/profile')->assertMethodNotAllowed();
     $this->assertNotNull($user->fresh());
 });
+
+test('students see their details read-only and cannot change them', function () {
+    $student = User::factory()->student()->create();
+    $profile = $student->studentProfile;
+
+    $this->actingAs($student)->get('/profile')
+        ->assertOk()
+        ->assertSee($profile->registration_no)
+        ->assertDontSee('name="email"', false);
+
+    $this->actingAs($student)->patch('/profile', [
+        'name' => 'Changed Name',
+        'email' => 'changed@student.du.test',
+    ])->assertForbidden();
+
+    expect($student->fresh()->name)->not->toBe('Changed Name');
+});

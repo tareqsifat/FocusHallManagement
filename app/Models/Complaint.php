@@ -112,8 +112,16 @@ class Complaint extends Model
         return ! $reporterVisible && $person->id === $this->student->user_id ? 'Anonymous student' : $person->name;
     }
 
-    public function locationLabel(): string
+    /**
+     * The room number is left out for viewers who may not see an anonymous complaint's reporter,
+     * since with 2–4 students per room it would come close to naming them.
+     */
+    public function locationLabel(bool $showRoom = true): string
     {
-        return $this->room ? "{$this->room->block->name} · Room {$this->room->room_no}" : (string) $this->location_text;
+        if (! $this->room) {
+            return (string) $this->location_text;
+        }
+
+        return $showRoom ? "{$this->room->block->name} · Room {$this->room->room_no}" : "{$this->room->block->name} block";
     }
 }

@@ -149,3 +149,35 @@ test('office staff assign a complaint to a house tutor', function () {
     $this->actingAs($this->student)->post(route('complaints.assign', $complaint), ['assignee_id' => $tutor->id])
         ->assertForbidden();
 });
+
+test('a tutor can only be assigned complaints from rooms in their own blocks', function () {
+    $room = Room::factory()->create();
+    $ownTutor = HouseTutor::factory()->create();
+    $ownTutor->blocks()->attach($room->block_id);
+    $otherTutor = HouseTutor::factory()->create();
+    $otherTutor->blocks()->attach(Room::factory()->create()->block_id);
+
+    $complaint = Complaint::factory()->create(['room_id' => $room->id, 'location_text' => null]);
+
+    $this->actingAs($this->office)->get(route('complaints.show', $complaint))
+        ->assertSee($ownTutor->user->name)->assertDontSee($otherTutor->user->name);
+    $this->actingAs($this->office)->post(route('complaints.assign', $complaint), ['assignee_id' => $otherTutor->user_id])
+        ->assertSessionHasErrors('assignee_id');
+    $this->actingAs($this->office)->post(route('complaints.assign', $complaint), ['assignee_id' => $ownTutor->user_id])
+        ->assertSessionHasNoErrors();
+    expect($complaint->fresh()->assigned_to)->toBe($ownTutor->user_id);
+});
+
+test('closed and rejected complaints cannot be reassigned or commented on', function (ComplaintStatus $status) {
+    $tutor = HouseTutor::factory()->create()->user;
+    $complaint = Complaint::factory()->status($status)->create(['student_profile_id' => $this->student->studentProfile->id]);
+
+    $this->actingAs($this->office)->post(route('complaints.assign', $complaint), ['assignee_id' => $tutor->id])->assertForbidden();
+    $this->actingAs($this->office)->post(route('complaints.comments', $complaint), ['body' => 'Late note'])->assertForbidden();
+    $this->actingAs($this->student)->post(route('complaints.comments', $complaint), ['body' => 'Late note'])->assertForbidden();
+    $this->actingAs($this->office)->get(route('complaints.show', $complaint))
+        ->assertOk()->assertDontSee('Post comment')->assertDontSee('Reassign');
+
+    expect($complaint->fresh()->assigned_to)->toBeNull()
+        ->and($complaint->comments()->count())->toBe(0);
+})->with([ComplaintStatus::Closed, ComplaintStatus::Rejected]);

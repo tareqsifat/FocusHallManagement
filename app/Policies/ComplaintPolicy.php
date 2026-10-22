@@ -25,14 +25,15 @@ class ComplaintPolicy
         return $user->hasRole(RoleName::Student) && $user->isActive() && $user->studentProfile !== null;
     }
 
+    /** A Closed or Rejected complaint is a finished record and cannot be reassigned or commented on. */
     public function assign(User $user, Complaint $complaint): bool
     {
-        return $user->isHallAdmin();
+        return $user->isHallAdmin() && ! $complaint->status->isLocked();
     }
 
     public function comment(User $user, Complaint $complaint): bool
     {
-        return $this->view($user, $complaint);
+        return $this->view($user, $complaint) && ! $complaint->status->isLocked();
     }
 
     /** Coarse check: may this user attempt any status change at all? */
