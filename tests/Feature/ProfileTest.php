@@ -58,19 +58,67 @@ test('users cannot delete their own account', function () {
     $this->assertNotNull($user->fresh());
 });
 
-test('students see their details read-only and cannot change them', function () {
+test('students can update their name and phone', function () {
     $student = User::factory()->student()->create();
     $profile = $student->studentProfile;
 
     $this->actingAs($student)->get('/profile')
         ->assertOk()
         ->assertSee($profile->registration_no)
+        ->assertSee('name="phone"', false)
         ->assertDontSee('name="email"', false);
 
+    $this->actingAs($student)->patch('/profile/student', [
+        'name' => 'Changed Name',
+        'phone' => '01812345678',
+    ])->assertSessionHasNoErrors()->assertRedirect('/profile');
+
+    expect($student->fresh()->name)->toBe('Changed Name')
+        ->and($profile->fresh()->phone)->toBe('01812345678');
+});
+
+test('students cannot change locked record fields', function () {
+    $student = User::factory()->student()->create();
+    $profile = $student->studentProfile;
+    $original = $profile->only(['registration_no', 'department', 'session']);
+    $email = $student->email;
+
+    $this->actingAs($student)->patch('/profile/student', [
+        'name' => 'Changed Name',
+        'phone' => '01812345678',
+        'email' => 'changed@student.du.test',
+        'registration_no' => '9999999999',
+        'department' => 'Other',
+        'session' => '2010-11',
+    ])->assertSessionHasNoErrors();
+
+    expect($student->fresh()->email)->toBe($email)
+        ->and($profile->fresh()->only(['registration_no', 'department', 'session']))->toBe($original);
+
+    // The staff endpoint, which edits email, stays closed to students.
     $this->actingAs($student)->patch('/profile', [
         'name' => 'Changed Name',
         'email' => 'changed@student.du.test',
     ])->assertForbidden();
+});
 
-    expect($student->fresh()->name)->not->toBe('Changed Name');
+test('student phone must be a Bangladeshi mobile number', function () {
+    $student = User::factory()->student()->create();
+    $phone = $student->studentProfile->phone;
+
+    $this->actingAs($student)->patch('/profile/student', [
+        'name' => $student->name,
+        'phone' => '01212345678',
+    ])->assertSessionHasErrors('phone');
+
+    expect($student->studentProfile->fresh()->phone)->toBe($phone);
+});
+
+test('staff cannot use the student profile endpoint', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->patch('/profile/student', [
+        'name' => 'Test User',
+        'phone' => '01812345678',
+    ])->assertForbidden();
 });

@@ -39,6 +39,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/student', [ProfileController::class, 'updateStudent'])->name('profile.student.update');
 
     Route::get('/users', [UserRoleController::class, 'index'])->can('manageRoles', User::class)->name('users.index');
     Route::put('/users/{user}/roles', [UserRoleController::class, 'update'])->can('updateRoles', 'user')->name('users.roles');
