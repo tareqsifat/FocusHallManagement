@@ -358,7 +358,12 @@ Indexes exist on `registration_no`, `tracking_id`, every `status` column, `categ
 
 ## Time spent
 
-_To be filled in by the candidate._
+About **12 hours** in total:
+
+| Work | Time |
+|---|---|
+| Development (planning, modules M1–M7, tests, seed data, UI checks) | 9 hours |
+| CI/CD and deployment (Docker, CI pipeline, server setup) | 3 hours |
 
 ---
 
