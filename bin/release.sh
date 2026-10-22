@@ -46,7 +46,7 @@ trap - ERR
 
 # Pick up a proxy config change that came with this commit; a reload drops
 # no connections
-docker compose exec -T proxy nginx -t -q && docker compose exec -T proxy nginx -s reload
+docker compose exec -T hall-proxy nginx -t -q && docker compose exec -T hall-proxy nginx -s reload
 
 # Images still in use are kept; older rollback targets can be re-pulled from GHCR
 docker image prune -af --filter "until=240h" >/dev/null || true

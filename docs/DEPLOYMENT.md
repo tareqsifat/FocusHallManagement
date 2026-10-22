@@ -3,12 +3,12 @@
 Everything lives in this one repo:
 
 ```
-Dockerfile                  app image: PHP 8.3.36 + Apache, built assets, no Composer/Node
-docker-compose.yml          local: build + MySQL, http://localhost:8000
-docker-compose.prod.yml     server overrides: GHCR image, nginx proxy, Caddy (HTTPS)
-docker/                     php.ini, opcache.ini, entrypoint, proxy config, Caddyfile.example
-deploy.sh                   one-time server setup (and safe re-run)
-bin/release.sh              zero-downtime release or rollback to an image tag
+Dockerfile                    app image: PHP 8.3.36 + Apache, built assets, no Composer/Node
+docker-compose.yml            local: build + MySQL, http://localhost:8000
+docker-compose.prod.yml       server: GHCR image, MySQL, hall-proxy (nginx), Caddy (HTTPS)
+docker/                       php.ini, opcache.ini, Apache worker cap, entrypoint, proxy, Caddyfile
+deploy.sh                     one-time server setup (safe to re-run)
+bin/release.sh                zero-downtime release or rollback to an image tag
 .github/workflows/deploy.yml  test -> build + push to GHCR -> release on the Droplet
 ```
 
@@ -25,7 +25,7 @@ docker compose up -d --build     # http://localhost:8000
 The first start migrates, seeds the Section 10 demo data (log in as any demo
 account from the README, password `password`) and generates an `APP_KEY`
 that is kept in the storage volume. MySQL is on host port 3307 so it does not
-clash with Laragon.
+clash with a local MySQL.
 
 ```sh
 docker compose logs -f app       # follow the app log
@@ -36,16 +36,28 @@ docker compose down -v           # stop and delete the database and uploads
 The local stack runs in production mode (built assets, `APP_DEBUG=false`).
 Rebuild to see code changes.
 
-## How a release works
+## Production layout
 
 ```
-            :80/:443
-browser ──► caddy (HTTPS) ──► proxy (nginx, never redeployed)
-                                 │  resolver 127.0.0.11 valid=1s → "app" = [old, new]
-                                 │  proxy_next_upstream error timeout
-                                 ├──► app (old)  ← SIGWINCH: finishes in-flight requests
-                                 └──► app (new)  ← started beside old, must pass /up
+https://hall.<ip-with-dashes>.sslip.io  (or your domain)
+        │
+        ▼
+      caddy (owns :80/:443, Let's Encrypt)
+        │
+        ▼
+      hall-proxy (nginx, never redeployed)
+        │  resolver 127.0.0.11 valid=1s → "app" = [old, new] during a release
+        ▼
+      app (PHP 8.3.36 + Apache, rolled)  ──►  db (MySQL 8.4)
 ```
+
+- [sslip.io](https://sslip.io) resolves `hall.1-2-3-4.sslip.io` to `1.2.3.4`,
+  so the site gets a hostname and a real certificate before you have a domain.
+- Apache runs at most 4 PHP processes (`APACHE_MAX_WORKERS` in `.env`). MySQL
+  starts with small-server settings (no performance schema, 128 MB buffer
+  pool). Both fit a 1 GB Droplet. On a bigger one, raise `APACHE_MAX_WORKERS`.
+
+## How a release works
 
 1. A push to `main` runs the tests (Pint and Pest), builds the image on GitHub
    and pushes it to `ghcr.io/tareqsifat/focushall` with tags `latest` and the commit SHA.
@@ -58,20 +70,42 @@ browser ──► caddy (HTTPS) ──► proxy (nginx, never redeployed)
 
 Pull requests run only the tests.
 
-## One-time server setup
+## One-time setup
 
-Starting from a fresh Ubuntu 24.04 Droplet. You already have swap, so
-`deploy.sh` will not add any.
+### 1. Push once to build the image
 
-### 1. Firewall
+Push to `main` with `DEPLOY_ENABLED` unset. The test and build jobs run, the
+image appears under GitHub → your profile → **Packages → focushall**, and the
+deploy job is skipped.
 
-Use a DigitalOcean **cloud firewall** with inbound **22** (your IP only), **80**
-and **443**. Don't rely on `ufw`, because Docker's iptables rules bypass it.
+Make the package **public** (Package settings → Change visibility). The image
+holds only the app code, which is in this repo anyway, and no secrets.
+The server can then pull without logging in. If you keep it private, see
+step 4.
 
-### 2. Clone the repo with a read-only deploy key
+### 2. DigitalOcean firewall
+
+Create a **cloud firewall** for the Droplet. Allow inbound **22** (your IP
+only, if you can), **80** and **443**. Don't rely on `ufw`, because Docker's
+iptables rules bypass it.
+
+### 3. Clone the repo on the Droplet
+
+As root:
 
 ```sh
 apt-get update && apt-get install -y git
+```
+
+**Public repo:**
+
+```sh
+git clone https://github.com/tareqsifat/FocusHallManagement.git /opt/focushall
+```
+
+**Private repo:** use a read-only deploy key.
+
+```sh
 ssh-keygen -t ed25519 -N "" -f /root/.ssh/focushall_repo -C "droplet read-only"
 cat /root/.ssh/focushall_repo.pub
 ```
@@ -89,72 +123,84 @@ ssh-keyscan github.com >> /root/.ssh/known_hosts
 git clone git@github.com:tareqsifat/FocusHallManagement.git /opt/focushall
 ```
 
-### 3. Caddyfile
-
-```sh
-cd /opt/focushall
-cp docker/caddy/Caddyfile.example docker/caddy/Caddyfile
-nano docker/caddy/Caddyfile   # keep the domain block, or switch to the IP-only block
-```
-
-With no domain yet, use the **IP-only** block. `deploy.sh` sets
-`SITE_HOST` to the Droplet IP.
-
-### 4. Log in to GHCR
-
-The first CI run creates the package. It is private by default, so log in
-once with a classic PAT that has only the `read:packages` scope:
-
-```sh
-echo ghp_xxx | docker login ghcr.io -u tareqsifat --password-stdin
-```
-
-Alternatively, make the package public (GitHub → Packages → focushall →
-Package settings) and skip this step.
-
-### 5. First start
-
-Push to `main` first (with `DEPLOY_ENABLED` unset) so that an image exists, then:
+### 4. First start
 
 ```sh
 bash /opt/focushall/deploy.sh
 ```
 
-This installs Docker and docker-rollout and writes `/opt/focushall/.env`
-with fresh secrets (`APP_KEY`, database passwords). Then it pulls and starts
-the stack. The first start migrates and seeds the demo data
-(`SEED_DEMO_DATA=true`). Open `https://<droplet-ip>`.
+This installs Docker and docker-rollout, adds 2 GB of swap if there is none,
+and writes `/opt/focushall/.env` with fresh secrets (`APP_KEY`, database
+passwords). Then it pulls and starts the stack. The first start migrates and
+seeds the demo data (`SEED_DEMO_DATA=true`). Caddy fetches the certificate
+within seconds. Open the URL it prints.
 
-### 6. Deploy user for CI
+If the package is private, log in first, with a classic PAT that has only the
+`read:packages` scope:
+
+```sh
+echo ghp_xxx | docker login ghcr.io -u tareqsifat --password-stdin
+```
+
+### 5. Deploy user for CI
 
 ```sh
 adduser --disabled-password --gecos "" deploy
 usermod -aG docker deploy          # the docker group is root-equivalent; keep the key in GitHub only
 chown -R deploy:deploy /opt/focushall
-# the deploy user needs the repo key too, for `git fetch` in the deploy job
 install -d -m 700 -o deploy -g deploy /home/deploy/.ssh
-cp /root/.ssh/focushall_repo /root/.ssh/config /root/.ssh/known_hosts /home/deploy/.ssh/
-sed -i 's|/root/|/home/deploy/|' /home/deploy/.ssh/config
-# and GHCR access, if the package is private
-cp -r /root/.docker /home/deploy/.docker 2>/dev/null || true
-chown -R deploy:deploy /home/deploy/.ssh /home/deploy/.docker 2>/dev/null || true
+```
 
-# CI's SSH key: generate it on your PC, paste the public half here
-nano /home/deploy/.ssh/authorized_keys
+On your PC, make a key pair just for CI:
+
+```sh
+ssh-keygen -t ed25519 -N "" -f focushall_ci -C "github-actions"
+```
+
+Put the contents of `focushall_ci.pub` into `/home/deploy/.ssh/authorized_keys`
+on the Droplet. The private file `focushall_ci` becomes the `SSH_PRIVATE_KEY`
+secret (step 6).
+
+```sh
 chown deploy:deploy /home/deploy/.ssh/authorized_keys && chmod 600 /home/deploy/.ssh/authorized_keys
 ```
 
-### 7. GitHub settings
+**Private repo only:** the deploy job runs `git fetch` as `deploy`, so give
+it the repo key too:
+
+```sh
+cp /root/.ssh/focushall_repo /root/.ssh/config /home/deploy/.ssh/
+sed -i 's|/root/|/home/deploy/|' /home/deploy/.ssh/config
+ssh-keyscan github.com >> /home/deploy/.ssh/known_hosts
+chown -R deploy:deploy /home/deploy/.ssh && chmod 600 /home/deploy/.ssh/*
+```
+
+**Private package only:** repeat the `docker login` from step 4 as `deploy`
+(`sudo -iu deploy`).
+
+Check that it works without a password prompt:
+
+```sh
+sudo -iu deploy sh -c 'cd /opt/focushall && git fetch origin main && docker compose ps'
+```
+
+### 6. GitHub settings
+
+In the repo: **Settings → Secrets and variables → Actions**.
 
 | Kind | Name | Value |
 |---|---|---|
-| Secret | `SSH_HOST` | Droplet IP |
+| Secret | `SSH_HOST` | the Droplet's public IP |
 | Secret | `SSH_USER` | `deploy` |
-| Secret | `SSH_PRIVATE_KEY` | private half of the CI key from step 6 |
-| Secret | `SSH_PORT` | only if not 22 |
-| Variable | `DEPLOY_ENABLED` | `true` once steps 1 to 6 are done |
-| Variable | `APP_DIR` | only if not `/opt/focushall` |
-| Environment | `production` | optional: add "required reviewers" for a manual approve button |
+| Secret | `SSH_PRIVATE_KEY` | contents of `focushall_ci` (the private key from step 5), including the `BEGIN`/`END` lines |
+| Secret | `SSH_PORT` | only if SSH is not on 22 |
+| Variable | `DEPLOY_ENABLED` | `true` (turns on the deploy job) |
+| Variable | `APP_DIR` | only if the checkout is not `/opt/focushall` |
+
+Pushing to GHCR needs no secret, because the workflow uses the built-in
+`GITHUB_TOKEN`. Optional: create an environment named `production`
+(**Settings → Environments**) with "required reviewers" to get a manual
+approve button before each deploy.
 
 ## Day to day
 
@@ -170,7 +216,7 @@ chown deploy:deploy /home/deploy/.ssh/authorized_keys && chmod 600 /home/deploy/
 
 ```sh
 cd /opt/focushall
-docker compose exec -T db sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction kjh_hall' \
+docker compose exec -T db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqldump -uroot --single-transaction kjh_hall' \
   | gzip > /root/kjh_hall-$(date +%F-%H%M).sql.gz
 ```
 
@@ -190,11 +236,10 @@ seconds. Every migration must keep the old code working:
 
 ## Adding a domain later
 
-Point the domain's A record at the Droplet. In `.env`, set
-`APP_URL=https://your-domain` and `SITE_HOST=your-domain`. Switch
-`docker/caddy/Caddyfile` to the domain block, then:
+Point the domain's A record at the Droplet. Then, in `/opt/focushall`:
 
 ```sh
+sed -i 's|^APP_URL=.*|APP_URL=https://your-domain|; s|^SITE_HOST=.*|SITE_HOST=your-domain|' .env
 docker compose up -d caddy        # picks up the new SITE_HOST (about 1 s blip)
 bash bin/release.sh "$(grep ^APP_TAG= .env | cut -d= -f2)"
 ```

@@ -80,6 +80,14 @@ DB_CONNECTION=mysql DB_DATABASE=kjh_hall_test php artisan test
 
 **Lint:** `./vendor/bin/pint --test`
 
+**Docker (alternative to the steps above).** Only Docker is needed:
+
+```bash
+docker compose up -d --build        # http://localhost:8000, demo data seeded on first start
+```
+
+To deploy on a server, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). On a fresh Ubuntu server, `deploy.sh` sets up Docker, MySQL and HTTPS (Caddy), and GitHub Actions deploys every push to `main` with no downtime.
+
 ---
 
 ## Demo accounts
@@ -152,9 +160,11 @@ Ten screenshots of the seeded demo data are in [`docs/screenshots/`](docs/screen
 
 Nothing in the must-have scope.
 
+- **Docker, CI and deployment (bonus):** a Dockerfile (PHP 8.3.36), local `docker compose`, and a GitHub Actions pipeline (tests → image on GHCR → zero-downtime release on a DigitalOcean Droplet) are written but not yet verified end to end. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ### Not done
 
-- **Bonus items:** JSON API (Section 8), events, polls, email notifications, Bangla/English toggle, CSV export, activity log, Docker, CI and live deployment. All data fields already accept Bangla text.
+- **Bonus items:** JSON API (Section 8), events, polls, email notifications, Bangla/English toggle, CSV export, activity log. All data fields already accept Bangla text.
 
 ---
 

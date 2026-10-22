@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Sets up KJH Hall on a fresh Ubuntu Droplet. Only this repo's checkout is
-# needed on the server, for the compose files, proxy config and scripts; the
-# app image is built by GitHub Actions and pulled from GHCR
+# needed on the server, for the compose files, proxy and Caddy config and
+# scripts; the app image is built by GitHub Actions and pulled from GHCR
 # (ghcr.io/tareqsifat/focushall).
 #
 #   /opt/focushall/   <- this repo (git clone), plus the server's own .env
@@ -9,7 +9,7 @@
 # Run as root:
 #
 #   bash /opt/focushall/deploy.sh          # pull images and start
-#   bash /opt/focushall/deploy.sh --pull   # git pull this repo first
+#   bash /opt/focushall/deploy.sh --pull   # update this checkout to origin/main first
 #
 # If the GHCR package is private, log in once as the user that runs compose:
 #   echo ghp_xxx | docker login ghcr.io -u tareqsifat --password-stdin
@@ -80,7 +80,9 @@ if [ ! -f .env ]; then
     if [ -z "${APP_URL:-}" ]; then
         ip="$(curl -fs --max-time 3 http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address || true)"
         [ -n "$ip" ] || ip="$(hostname -I | awk '{print $1}')"
-        APP_URL="https://$ip"
+        # sslip.io resolves hall.1-2-3-4.sslip.io to 1.2.3.4, so the site gets
+        # a hostname (and a real certificate) without buying a domain
+        APP_URL="https://hall.${ip//./-}.sslip.io"
     fi
 
     echo "==> Creating $APP_DIR/.env for $APP_URL"
@@ -92,10 +94,10 @@ APP_DEBUG=false
 APP_KEY=base64:$(openssl rand -base64 32)
 APP_URL=$APP_URL
 LOG_LEVEL=warning
-
-# Address Caddy gets the HTTPS certificate for (the IP now, a domain later)
-SITE_HOST=${APP_URL#*://}
 SESSION_SECURE_COOKIE=true
+
+# Caddy gets the HTTPS certificate for this host
+SITE_HOST=${APP_URL#*://}
 
 # Set by bin/release.sh on every release; edit only to roll back by hand
 APP_TAG=latest
@@ -118,13 +120,6 @@ else
         echo "  mv .env .env.local-backup && bash deploy.sh" >&2
         exit 1
     fi
-fi
-
-# --- Caddyfile (server-specific, not in git) -------------------------------
-if [ ! -f docker/caddy/Caddyfile ]; then
-    echo "docker/caddy/Caddyfile is missing. Create it from docker/caddy/Caddyfile.example" >&2
-    echo "(domain or IP variant, matching SITE_HOST in .env) and re-run." >&2
-    exit 1
 fi
 
 # --- Start ------------------------------------------------------------------

@@ -9,7 +9,7 @@
 # pulled from GHCR, so the Droplet needs no Node, Composer or build memory.
 #
 # Only Caddy publishes ports (80 + 443). It terminates HTTPS and forwards to
-# the proxy, which is never redeployed by CI and finds the app through Docker
+# hall-proxy, which is never redeployed by CI and finds the app through Docker
 # DNS, so `docker rollout app` can start the new container beside the old one
 # and swap them with no downtime. For that, app must not publish host ports
 # or set container_name.
@@ -25,6 +25,8 @@ services:
   db:
     ports: !reset []
     logging: *logging
+    # Small-server settings; the defaults reserve far more memory than this app uses
+    command: ["--performance-schema=OFF", "--innodb-buffer-pool-size=128M"]
     environment:
       MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set in .env}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is not set in .env}
@@ -38,11 +40,13 @@ services:
     environment:
       APP_DEBUG: ${APP_DEBUG:-false}
       APP_KEY: ${APP_KEY:?APP_KEY is not set in .env}
-      APP_URL: ${APP_URL:?APP_URL is not set in .env (e.g. https://YOUR_IP)}
+      APP_URL: ${APP_URL:?APP_URL is not set in .env}
       LOG_LEVEL: ${LOG_LEVEL:-warning}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set in .env}
-      SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE:-false}
+      SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE:-true}
       SEED_DEMO_DATA: ${SEED_DEMO_DATA:-false}
+      # A few PHP processes for a small Droplet; raise it on a bigger one
+      APACHE_MAX_WORKERS: ${APACHE_MAX_WORKERS:-4}
     # Time for Apache's graceful stop (SIGWINCH) to finish in-flight requests
     stop_grace_period: 30s
     healthcheck:
@@ -50,7 +54,7 @@ services:
       # it is ready instead of on the next 10s tick (Docker Engine 25+)
       start_interval: 2s
 
-  proxy:
+  hall-proxy:
     image: nginx:1.27-alpine
     restart: unless-stopped
     # No public port; Caddy reaches it over the compose network
@@ -70,17 +74,16 @@ services:
       - "443:443"
       - "443:443/udp"
     environment:
-      SITE_HOST: ${SITE_HOST:?SITE_HOST is not set in .env (the Droplet IP or your domain)}
+      SITE_HOST: ${SITE_HOST:?SITE_HOST is not set in .env}
     volumes:
-      # Directory mount, same reason as the proxy. docker/caddy/Caddyfile is
-      # server-specific (IP or domain) and not in git; see Caddyfile.example
+      # Directory mount, same reason as hall-proxy
       - ./docker/caddy:/etc/caddy:ro
       # Certificates and the ACME account; never delete these volumes
       - caddy_data:/data
       - caddy_config:/config
     logging: *logging
     depends_on:
-      - proxy
+      - hall-proxy
 
 volumes:
   caddy_data:

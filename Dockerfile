@@ -24,6 +24,11 @@ RUN printf '%s\n' \
     && a2enmod remoteip \
     && a2enconf remoteip
 
+# Small worker pool for small servers; loaded after mods-enabled, so it wins
+ENV APACHE_MAX_WORKERS=10
+COPY docker/apache-mpm.conf /etc/apache2/conf-available/hall-mpm.conf
+RUN a2enconf hall-mpm
+
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 COPY docker/php.ini $PHP_INI_DIR/conf.d/99-hall.ini
 COPY docker/opcache.ini $PHP_INI_DIR/conf.d/98-opcache.ini

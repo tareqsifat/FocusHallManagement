@@ -1,0 +1,11 @@
+# SITE_HOST comes from the server's .env: your domain, or
+# hall.<ip-with-dashes>.sslip.io until you have one. Either way Caddy gets a
+# normal Let's Encrypt certificate.
+#
+# Reload after editing, without downtime:
+#   docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+
+{$SITE_HOST} {
+	encode zstd gzip
+	reverse_proxy hall-proxy:80
+}

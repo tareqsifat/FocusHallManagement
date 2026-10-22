@@ -75,10 +75,17 @@
 
 ## Partly done
 - Nothing in the must-have scope.
+- **Docker, CI and deployment (bonus)**: written, not yet run end to end. See `docs/DEPLOYMENT.md`.
+  - `docker compose up -d --build` runs the app with MySQL on http://localhost:8000. It migrates, seeds the demo data on first start and generates an `APP_KEY`.
+  - The image pins PHP 8.3.36 (PHP2Shell RCE fixes), has no Composer or Node, and caps Apache at a few PHP processes.
+  - GitHub Actions runs Pint and the tests, builds the image and pushes it to GHCR, then releases on the DigitalOcean Droplet with `docker rollout`, with no downtime and a one-command rollback.
+  - On the Droplet: MySQL with small-server settings, and Caddy for HTTPS on an sslip.io hostname until there is a domain.
+  - `fakerphp/faker` moved to `require` so the production image can seed the demo accounts. `trustProxies` was added so URLs are `https://` behind Caddy.
+  - Not yet verified: the image build, the local compose run, and the first server deploy. There is no Docker on the development PC.
 
 ## Not done
 - README "Time spent" (to be filled by the candidate).
-- Bonus items (JSON API, Docker, CI, deployment, etc.).
+- Bonus items: JSON API, events, polls, email notifications, Bangla/English toggle, CSV export, activity log.
 
 ## Assumptions
 - Dashboard "open" complaints are Submitted, Under Review and In Progress. Closed complaints still count toward average resolution time (they keep `resolved_at`).
