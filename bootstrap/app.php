@@ -13,6 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias(['active' => EnsureUserIsActive::class]);
+
+        // In Docker, Apache is reachable only through Caddy and the nginx
+        // proxy, so trust their X-Forwarded-* headers (https URLs, client IP)
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

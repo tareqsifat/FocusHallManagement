@@ -1,0 +1,87 @@
+# Production overrides for a single server (a DigitalOcean Droplet). The
+# server's .env (created by deploy.sh) sets
+#
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.prod.yml
+#
+# so plain `docker compose ...` picks both files up.
+#
+# Nothing is built on the server: the app image is built by GitHub Actions and
+# pulled from GHCR, so the Droplet needs no Node, Composer or build memory.
+#
+# Only Caddy publishes ports (80 + 443). It terminates HTTPS and forwards to
+# the proxy, which is never redeployed by CI and finds the app through Docker
+# DNS, so `docker rollout app` can start the new container beside the old one
+# and swap them with no downtime. For that, app must not publish host ports
+# or set container_name.
+# Needs Docker Compose 2.24.4+ (for !reset).
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  db:
+    ports: !reset []
+    logging: *logging
+    environment:
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set in .env}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is not set in .env}
+
+  app:
+    image: ${APP_IMAGE:-ghcr.io/tareqsifat/focushall}:${APP_TAG:-latest}
+    build: !reset null
+    pull_policy: missing
+    ports: !reset []
+    logging: *logging
+    environment:
+      APP_DEBUG: ${APP_DEBUG:-false}
+      APP_KEY: ${APP_KEY:?APP_KEY is not set in .env}
+      APP_URL: ${APP_URL:?APP_URL is not set in .env (e.g. https://YOUR_IP)}
+      LOG_LEVEL: ${LOG_LEVEL:-warning}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set in .env}
+      SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE:-false}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-false}
+    # Time for Apache's graceful stop (SIGWINCH) to finish in-flight requests
+    stop_grace_period: 30s
+    healthcheck:
+      # Probe every 2s while starting, so a release goes live seconds after
+      # it is ready instead of on the next 10s tick (Docker Engine 25+)
+      start_interval: 2s
+
+  proxy:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    # No public port; Caddy reaches it over the compose network
+    volumes:
+      # Mount the directory, not the file: a single-file bind mount pins the
+      # old inode, so after `git pull` a reload would still see the old config
+      - ./docker/proxy:/etc/nginx/conf.d:ro
+    logging: *logging
+    depends_on:
+      - app
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SITE_HOST: ${SITE_HOST:?SITE_HOST is not set in .env (the Droplet IP or your domain)}
+    volumes:
+      # Directory mount, same reason as the proxy. docker/caddy/Caddyfile is
+      # server-specific (IP or domain) and not in git; see Caddyfile.example
+      - ./docker/caddy:/etc/caddy:ro
+      # Certificates and the ACME account; never delete these volumes
+      - caddy_data:/data
+      - caddy_config:/config
+    logging: *logging
+    depends_on:
+      - proxy
+
+volumes:
+  caddy_data:
+  caddy_config:
