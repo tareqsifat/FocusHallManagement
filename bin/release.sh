@@ -8,8 +8,10 @@ cd "$(dirname "$0")/.."
 
 tag="${1:?usage: bin/release.sh <tag>}"
 
-# A manual rollback and a CI release can overlap; both edit .env
-exec 9>/tmp/focushall-release.lock
+# A manual rollback and a CI release can overlap; both edit .env. Lock the
+# checkout directory itself: a lock file would belong to whoever ran this
+# first (root or deploy) and could then not be opened by the other
+exec 9<.
 flock 9
 
 previous="$(grep -E '^APP_TAG=' .env | cut -d= -f2- || true)"
