@@ -104,3 +104,30 @@ In practice it wasn't only a matter of consistency: the app layout shows every `
 - Colour contrast was not measured with a tool. Visually, text on badges and buttons reads clearly.
 - Keyboard focus order and visible focus rings were not tested.
 - Super Admin, Provost and Club Admin were not covered by the 375 px audit. The earlier check in `PROGRESS.md` covered all six roles.
+
+## Live deployment check
+
+Re-run on 22 Oct 2026 against `https://hall.167-71-235-164.sslip.io/`. The live build includes the fixes above (tab titles, 403 / 404 pages, readable profile banner). Each role was logged in by hand in the browser and the checks used that session. No data was changed: the form tests only submitted invalid input, or saved without changing anything.
+
+| Check | Guest | Office Staff | Student | House Tutor |
+|---|:---:|:---:|:---:|:---:|
+| Pages checked at 375 px | 11 | 23 | 15 | 15 |
+| Sideways overflow | none | none | none | none |
+| Unlabelled form fields | none | none | none | none |
+| Tab titles name the page | ✅ | ✅ | ✅ | ✅ |
+| 403 / 404 pages | ✅ 404 | ✅ 403 | ✅ 403 | ✅ 403 |
+| Validation messages | – | ✅ New Block | ✅ New Complaint, phone | – |
+| Empty states | ✅ | ✅ | – | ✅ |
+
+Also confirmed on live:
+
+- **Student profile:** only name and phone can be edited. An invalid phone is refused with a clear message, saving shows "Profile updated.", and `email` / `registration_no` fields added to the form by hand are ignored.
+- **House tutor:** opening a complaint in another block returns the "Access denied" page (BR-08). On an assigned complaint, the comment and status forms fit at 375 px.
+
+### Live-only issue: two complaint badges have no colour — ✅ fixed in code, needs redeploy
+
+On the live site the **Submitted** and **Rejected** status badges show as plain text with no coloured pill. The colour classes for complaint statuses are written in `app/Enums/ComplaintStatus.php`, but `tailwind.config.js` only scans Blade views. `bg-blue-100`, `text-blue-800` and `bg-red-100` aren't used in any Blade file, so the server's build leaves them out. The other badge colours appear in some view, so they get built anyway. The local build does include those three classes, so the local and server builds were not made from the same config or files.
+
+**Fix:** add `'./app/**/*.php'` to `content` in `tailwind.config.js`, then run `npm run build` and redeploy.
+
+**Done:** `./app/**/*.php` was added to Tailwind's `content`. A local `npm run build` now includes every badge colour (`bg-blue-100`, `text-blue-800`, `bg-red-100` and the others). The live site will show the colours once it is rebuilt and redeployed.
