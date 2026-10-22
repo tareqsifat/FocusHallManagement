@@ -37,6 +37,10 @@ WORKDIR /var/www/html
 
 # ---- deps: vendor/ packages only, cached until composer.lock changes ---------
 FROM base AS deps
+# Composer needs unzip to unpack dist archives; this stage only, not the runtime
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends unzip \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
 COPY composer.json composer.lock ./
