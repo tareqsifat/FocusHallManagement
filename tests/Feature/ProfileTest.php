@@ -73,6 +73,8 @@ test('students can update their name and phone', function () {
         'phone' => '01812345678',
     ])->assertSessionHasNoErrors()->assertRedirect('/profile');
 
+    $this->actingAs($student)->get('/profile')->assertSee('Profile updated.');
+
     expect($student->fresh()->name)->toBe('Changed Name')
         ->and($profile->fresh()->phone)->toBe('01812345678');
 });

@@ -35,7 +35,7 @@ class ProfileController extends Controller
 
         $request->user()->save();
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        return Redirect::route('profile.edit')->with('status', 'Profile updated.');
     }
 
     /**
@@ -50,6 +50,6 @@ class ProfileController extends Controller
             $user->studentProfile->update(['phone' => $request->validated('phone')]);
         });
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        return Redirect::route('profile.edit')->with('status', 'Profile updated.');
     }
 }
