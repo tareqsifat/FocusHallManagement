@@ -91,9 +91,13 @@ Most signed-in pages have the tab title "KJH Hall". Only the public pages add th
 
 On `/admin/notices`, the View / Edit / Delete links on each row are about 20 px tall. That's fine with a mouse but small for a thumb. Common guidance is at least 24 px, and 44 px is better.
 
-### 4. Two different flash patterns (minor)
+### 4. Two different flash patterns — ✅ fixed
 
 The app uses free-text `status` messages everywhere except two Breeze profile forms, which match fixed values (`profile-updated`, `password-updated`). It works, but it's a different pattern from the rest of the app.
+
+In practice it wasn't only a matter of consistency: the app layout shows every `status` value as a green banner, so saving a profile showed the raw text "profile-updated" (and "password-updated" for passwords).
+
+**Done:** these saves now send "Profile updated." and "Password updated.", and the small "Saved." labels were removed, so they match every other save in the app.
 
 ## Not checked
 
